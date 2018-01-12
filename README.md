@@ -35,7 +35,7 @@ Here is an example of performance comparison for several different allocators.
 Platform: Playstation 4
 
 Threads | #1 | #2 | #3 | #4
---- | --- | --- | --- |--- |---
+--- | --- | --- | --- |--- 
 mspace | 4741379 | 956729 | 457264 | 366920
 crt | 4444444 | 853385 | 419009 | 332095
 ltalloc | 28571429 | 25290698 | 19248174 | 14683637
