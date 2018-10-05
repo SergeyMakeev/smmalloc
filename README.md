@@ -5,7 +5,7 @@ The allocator created for using in applications where the performance is critica
 Designed to speed up the typical memory allocation pattern in C++ such as many small allocations and deletions.
 This is a proxy allocator means that smmalloc handles only specific allocation sizes and pass-through all other allocations to generic heap allocator.
 
-## Commercial games using Task Scheduler
+## Commercial games using smmalloc
 
 - Warface (PS4, X1)
 
