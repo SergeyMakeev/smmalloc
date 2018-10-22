@@ -525,6 +525,8 @@ namespace sm
 				size_t elementSize = GetBucketElementSize(bucketIndex);
 				if (bytesCount <= elementSize)
 				{
+					Free(p);
+
 					//reuse existing memory
 					return p;
 				}
@@ -548,8 +550,11 @@ namespace sm
 				// http://www.cplusplus.com/reference/cstdlib/realloc/
 				// If size is zero, the return value depends on the particular library implementation (it may or may not be a null pointer),
 				// but the returned pointer shall not be dereferenced.
+				if (IsReadable(p))
+				{
+					GenericAllocator::Free(gAllocator, p);
+				}
 
-				GenericAllocator::Free(gAllocator, p);
 				return (void*)alignment;
 			}
 
