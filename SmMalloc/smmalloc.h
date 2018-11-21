@@ -27,6 +27,7 @@
 #include <memory>
 #include <atomic>
 #include <initializer_list>
+#include <cstring>
 
 //#define SMMALLOC_STATS_SUPPORT
 
