@@ -28,7 +28,6 @@
 #include <atomic>
 #include <initializer_list>
 
-
 //#define SMMALLOC_STATS_SUPPORT
 
 
@@ -542,6 +541,7 @@ namespace sm
 				}
 
 				Free(p);
+
 				return p2;
 			}
 
@@ -813,6 +813,13 @@ INLINE bool Allocator::ReleaseToCache(internal::TlsPoolBucket* __restrict _self,
 
 #ifdef SMMALLOC_CSTYLE_FUNCS
 
+#define SMMALLOC_DLL
+
+#if defined(_WIN32) && defined(SMMALLOC_DLL)
+    #define SMMALLOC_API __declspec(dllexport)
+#else
+    #define SMMALLOC_API extern
+#endif
 
 #ifdef __cplusplus
 extern "C"
@@ -827,7 +834,7 @@ extern "C"
 
 typedef sm::Allocator* sm_allocator;
 
-INLINE sm_allocator _sm_allocator_create(uint32_t bucketsCount, size_t bucketSizeInBytes)
+SMMALLOC_API INLINE sm_allocator _sm_allocator_create(uint32_t bucketsCount, size_t bucketSizeInBytes)
 {
 	sm::GenericAllocator::TInstance instance = sm::GenericAllocator::Create();
 	if (!sm::GenericAllocator::IsValid(instance))
@@ -850,7 +857,7 @@ INLINE sm_allocator _sm_allocator_create(uint32_t bucketsCount, size_t bucketSiz
 	return allocator;
 }
 
-INLINE void _sm_allocator_destroy(sm_allocator allocator)
+SMMALLOC_API INLINE void _sm_allocator_destroy(sm_allocator allocator)
 {
 	if (allocator == nullptr)
 	{
@@ -869,7 +876,7 @@ INLINE void _sm_allocator_destroy(sm_allocator allocator)
 	sm::GenericAllocator::Destroy(instance);
 }
 
-INLINE void _sm_allocator_thread_cache_create(sm_allocator allocator, sm::CacheWarmupOptions warmupOptions, std::initializer_list<uint32_t> options)
+SMMALLOC_API INLINE void _sm_allocator_thread_cache_create(sm_allocator allocator, sm::CacheWarmupOptions warmupOptions, std::initializer_list<uint32_t> options)
 {
 	if (allocator == nullptr)
 	{
@@ -879,7 +886,7 @@ INLINE void _sm_allocator_thread_cache_create(sm_allocator allocator, sm::CacheW
 	allocator->CreateThreadCache(warmupOptions, options);
 }
 
-INLINE void _sm_allocator_thread_cache_destroy(sm_allocator allocator)
+SMMALLOC_API INLINE void _sm_allocator_thread_cache_destroy(sm_allocator allocator)
 {
 	if (allocator == nullptr)
 	{
@@ -889,27 +896,27 @@ INLINE void _sm_allocator_thread_cache_destroy(sm_allocator allocator)
 	allocator->DestroyThreadCache();
 }
 
-INLINE void* _sm_malloc(sm_allocator allocator, size_t bytesCount, size_t alignment)
+SMMALLOC_API INLINE void* _sm_malloc(sm_allocator allocator, size_t bytesCount, size_t alignment)
 {
 	return allocator->Alloc(bytesCount, alignment);
 }
 
-INLINE void _sm_free(sm_allocator allocator, void* p)
+SMMALLOC_API INLINE void _sm_free(sm_allocator allocator, void* p)
 {
 	return allocator->Free(p);
 }
 
-INLINE void* _sm_realloc(sm_allocator allocator, void* p, size_t bytesCount, size_t alignment)
+SMMALLOC_API INLINE void* _sm_realloc(sm_allocator allocator, void* p, size_t bytesCount, size_t alignment)
 {
 	return allocator->Realloc(p, bytesCount, alignment);
 }
 
-INLINE size_t _sm_msize(sm_allocator allocator, void* p)
+SMMALLOC_API INLINE size_t _sm_msize(sm_allocator allocator, void* p)
 {
 	return allocator->GetUsableSize(p);
 }
 
-INLINE int32_t _sm_mbucket(sm_allocator allocator, void* p)
+SMMALLOC_API INLINE int32_t _sm_mbucket(sm_allocator allocator, void* p)
 {
 	return allocator->GetBucketIndex(p);
 }
