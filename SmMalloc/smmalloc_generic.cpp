@@ -70,5 +70,12 @@ size_t sm::GenericAllocator::GetUsableSpace(sm::GenericAllocator::TInstance inst
 {
 	SMMALLOC_UNUSED(instance);
 	size_t alignment = DetectAlignment(p);
-	return _aligned_msize(p, alignment, 0);
+	#ifdef __GNUC__
+		if (alignment < sizeof(void*))
+			alignment = sizeof(void*);
+
+		return _msize(p) - alignment - sizeof(void*);
+	#else
+		return _aligned_msize(p, alignment, 0);
+	#endif
 }
