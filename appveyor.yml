@@ -1,0 +1,10 @@
+version: 1.0.{build}
+
+build_script:
+- genie.exe vs2015
+- cd Build/vs2015
+- MsBuild SmMalloc.sln /t:Rebuild /p:Configuration=Release
+
+test_script:
+- cd ..\..\Bin\vs2015\Release-x32\
+- Tests.exe
