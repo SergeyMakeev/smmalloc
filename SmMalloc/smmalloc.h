@@ -52,7 +52,7 @@
 #endif
 
 
-#if defined(_M_X64)
+#if defined(_M_X64) || _LP64
 #define SMMMALLOC_X64
 #define SMM_MAX_CACHE_ITEMS_COUNT (7)
 #else
@@ -514,9 +514,15 @@ namespace sm
 
 		INLINE void* Realloc(void* p, size_t bytesCount, size_t alignment)
 		{
-			if (p == nullptr)
+			if (!IsReadable(p))
 			{
 				return Alloc(bytesCount, alignment);
+			}
+
+			if (bytesCount == 0)
+			{
+				Free(p);
+				return (void*)alignment;
 			}
 
 			size_t bucketIndex = FindBucket(p);
@@ -525,8 +531,6 @@ namespace sm
 				size_t elementSize = GetBucketElementSize(bucketIndex);
 				if (bytesCount <= elementSize)
 				{
-					Free(p);
-
 					//reuse existing memory
 					return p;
 				}
