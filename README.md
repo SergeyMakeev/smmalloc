@@ -12,7 +12,7 @@ Windows
 
 ## Commercial games using smmalloc
 
-- Warface (PS4, X1)
+- Warface (PS4, X1, Nintendo Switch)
 
 
 ## Features
