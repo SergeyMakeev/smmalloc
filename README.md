@@ -1,3 +1,5 @@
+# smmalloc [![Build status](https://ci.appveyor.com/api/projects/status/8c3oqiywaa8firfy?svg=true)](https://ci.appveyor.com/project/SergeyMakeev/smmalloc/) [![codecov](https://codecov.io/gh/SergeyMakeev/smmalloc/branch/master/graph/badge.svg?token=DKANC80IO5)](https://codecov.io/gh/SergeyMakeev/smmalloc) ![MIT](https://img.shields.io/badge/license-MIT-blue.svg)
+
 ## About
 
 smmalloc is a fast and efficient "proxy" allocator designed to handle many small allocations/deallocations in heavy multithreaded scenarios.
