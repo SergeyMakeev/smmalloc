@@ -79,6 +79,11 @@ target_link_libraries(${TEST_EXE_NAME} gtest_main)
 # add ubench
 target_include_directories(${PERF_EXE_NAME} PRIVATE "${PROJECT_SOURCE_DIR}/extern/ubench")
 
+if(UNIX OR MACOS OR IOS)
+  target_link_libraries(${PERF_EXE_NAME} PRIVATE pthread)
+endif()
+
+
 # add test allocators include dirs
 target_include_directories(${PERF_EXE_NAME} PRIVATE "${PROJECT_SOURCE_DIR}/extern/hoard/Heap-Layers")
 target_include_directories(${PERF_EXE_NAME} PRIVATE "${PROJECT_SOURCE_DIR}/extern/hoard/include")
