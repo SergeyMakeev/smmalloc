@@ -23,10 +23,7 @@ jobs:
     - name: Build
       run: cd build && cmake --build . --config Release
     - name: Run tests
-      run: |
-        cd build
-        cd bin
-        ls
+      run: cd ./build/bin/ && ls
   build-windows:
     runs-on: windows-latest
     strategy:
