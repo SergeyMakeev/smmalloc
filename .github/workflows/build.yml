@@ -14,14 +14,11 @@ jobs:
         arch: [Win32, x64]
         defines: [standard]
     steps:
-    - name: build and test
-      shell: bash
-      run: |
-        dir
-        mkdir -p build
-        cd build
-        cmake ..
-        cmake --build . --config Release
-        dir
-        ./smmalloc_test.exe
-        ./smmalloc_perf.exe
+    - name: configure
+      run: mkdir -p build && cd build && cmake ..
+    - name: build
+      run: cmake --build . --config Release
+    - name: test
+      run: build/smmalloc_test.exe
+    - name: perftest
+      run: build/smmalloc_perf.exe
