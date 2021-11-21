@@ -22,6 +22,8 @@ jobs:
       run: mkdir build && cd build && cmake ..
     - name: Build
       run: cd build && cmake --build . --config Release
+    - name: Debug
+      run: ls
     - name: Run unit tests
       run: "./build/Release/smmalloc_test"
     - name: Run performance tests
