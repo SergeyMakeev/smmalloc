@@ -80,7 +80,7 @@ target_link_libraries(${TEST_EXE_NAME} gtest_main)
 target_include_directories(${PERF_EXE_NAME} PRIVATE "${PROJECT_SOURCE_DIR}/extern/ubench")
 
 if(UNIX OR MACOS OR IOS)
-  target_link_libraries(${PERF_EXE_NAME} PRIVATE pthread)
+  target_link_libraries(${PERF_EXE_NAME} pthread)
 endif()
 
 
