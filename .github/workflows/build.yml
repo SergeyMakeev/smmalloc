@@ -15,7 +15,7 @@ jobs:
         defines: [standard]
     steps:
     - name: configure
-      run: mkdir build && cd build && cmake ..
+      run: cmake .
     - name: build
       run: cmake --build . --config Release
     - name: test
