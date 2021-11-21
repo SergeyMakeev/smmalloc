@@ -27,6 +27,6 @@ thread_local sm::internal::TlsPoolBucket tlsCacheBuckets[SMM_MAX_BUCKET_COUNT];
 namespace sm
 {
 
-sm::internal::TlsPoolBucket* __restrict GetTlsBucket(size_t index) { return &tlsCacheBuckets[index]; }
+sm::internal::TlsPoolBucket* GetTlsBucket(size_t index) { return &tlsCacheBuckets[index]; }
 
 } // namespace sm

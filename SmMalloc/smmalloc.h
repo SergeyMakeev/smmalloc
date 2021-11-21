@@ -121,7 +121,7 @@ namespace internal
 struct TlsPoolBucket;
 }
 
-internal::TlsPoolBucket* __restrict GetTlsBucket(size_t index);
+internal::TlsPoolBucket* GetTlsBucket(size_t index);
 
 INLINE bool IsAligned(size_t v, size_t alignment)
 {
