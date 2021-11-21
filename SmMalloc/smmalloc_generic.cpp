@@ -22,6 +22,12 @@
 #include "smmalloc.h"
 #include <malloc.h>
 
+struct Header
+{
+    void* p;
+    size_t size;
+};
+
 sm::GenericAllocator::TInstance sm::GenericAllocator::Invalid() { return nullptr; }
 
 bool sm::GenericAllocator::IsValid(TInstance instance)
@@ -41,31 +47,63 @@ void* sm::GenericAllocator::Alloc(sm::GenericAllocator::TInstance instance, size
     {
         alignment = 16;
     }
-    return _aligned_malloc(bytesCount, alignment);
+    void* p;
+    void** p2;
+    size_t offset = alignment - 1 + sizeof(Header);
+    if ((p = (void*)std::malloc(bytesCount + offset)) == NULL)
+    {
+        return NULL;
+    }
+    p2 = (void**)(((size_t)(p) + offset) & ~(alignment - 1));
+
+    Header* h = reinterpret_cast<Header*>(reinterpret_cast<char*>(p2) - sizeof(Header));
+    h->p = p;
+    h->size = bytesCount;
+    return p2;
 }
 
 void sm::GenericAllocator::Free(sm::GenericAllocator::TInstance instance, void* p)
 {
     SMMALLOC_UNUSED(instance);
-    _aligned_free(p);
+    if (!p)
+    {
+        return;
+    }
+    Header* h = reinterpret_cast<Header*>(reinterpret_cast<char*>(p) - sizeof(Header));
+    std::free(h->p);
 }
 
 void* sm::GenericAllocator::Realloc(sm::GenericAllocator::TInstance instance, void* p, size_t bytesCount, size_t alignment)
 {
     SMMALLOC_UNUSED(instance);
-    return _aligned_realloc(p, bytesCount, alignment);
+
+    void* p2 = Alloc(instance, bytesCount, alignment);
+    if (!p2)
+    {
+        // https://en.cppreference.com/w/c/memory/realloc
+        // If there is not enough memory, the old memory block is not freed and null pointer is returned.
+        return nullptr;
+    }
+
+    if (p)
+    {
+        size_t oldBlockSize = GetUsableSpace(instance, p);
+        std::memmove(p2, p, std::min(oldBlockSize, bytesCount));
+    }
+
+    Free(instance, p);
+    return p2;
 }
 
 size_t sm::GenericAllocator::GetUsableSpace(sm::GenericAllocator::TInstance instance, void* p)
 {
     SMMALLOC_UNUSED(instance);
-    size_t alignment = DetectAlignment(p);
-#ifdef __GNUC__
-    if (alignment < sizeof(void*))
-        alignment = sizeof(void*);
 
-    return _msize(p) - alignment - sizeof(void*);
-#else
-    return _aligned_msize(p, alignment, 0);
-#endif
+    if (!p)
+    {
+        return 0;
+    }
+
+    Header* h = reinterpret_cast<Header*>(reinterpret_cast<char*>(p) - sizeof(Header));
+    return h->size;
 }

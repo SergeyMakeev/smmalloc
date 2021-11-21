@@ -234,10 +234,10 @@ extern "C"
 #include <mutex>
 std::mutex globalMutex;
 
-void* dl_malloc(size_t v)
+void* dl_malloc(size_t a, size_t v)
 {
     std::lock_guard<std::mutex> lock(globalMutex);
-    return dlmalloc(v);
+    return dlmemalign(a, v);
 }
 
 void dl_free(void* p)
@@ -252,7 +252,7 @@ void dl_free(void* p)
 #define DESTROY_HEAP
 #define ON_THREAD_START
 #define ON_THREAD_FINISHED
-#define MALLOC(size, align) dl_malloc(/*align,*/ size)
+#define MALLOC(size, align) dl_malloc(align, size)
 #define FREE(p) dl_free(p)
 #include "smmalloc_test_impl.inl"
 #undef ALLOCATOR_TEST_NAME
@@ -272,7 +272,7 @@ void dl_free(void* p)
 #define DESTROY_HEAP
 #define ON_THREAD_START
 #define ON_THREAD_FINISHED
-#define MALLOC(size, align) dlmalloc(/*align,*/ size)
+#define MALLOC(size, align) dlmemalign(align, size)
 #define FREE(p) dlfree(p)
 #include "smmalloc_test_impl.inl"
 #undef ALLOCATOR_TEST_NAME
@@ -403,7 +403,7 @@ UBENCH_EX(PerfTest, dlmalloc_10m)
         for (size_t i = 0; i < g.randomSequence.size(); i++)
         {
             size_t numBytesToAllocate = g.randomSequence[i];
-            void* ptr = dlmalloc(numBytesToAllocate);
+            void* ptr = dlmemalign(16, numBytesToAllocate);
             memset(ptr, 33, numBytesToAllocate);
 
             g.workingSet[allocIndex % wsSize] = ptr;

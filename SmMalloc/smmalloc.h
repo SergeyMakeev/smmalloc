@@ -137,23 +137,6 @@ INLINE size_t Align(size_t val, size_t alignment)
     return r;
 }
 
-INLINE size_t DetectAlignment(void* p)
-{
-    uintptr_t v = (uintptr_t)p;
-
-    size_t ptrBitsCount = sizeof(void*) * 8;
-    size_t i;
-    for (i = 0; i < ptrBitsCount; i++)
-    {
-        if (v & 1)
-        {
-            break;
-        }
-        v = v >> 1;
-    }
-    return (size_t(1) << i);
-}
-
 struct GenericAllocator
 {
     typedef void* TInstance;
@@ -487,7 +470,7 @@ class Allocator
         if (bytesCount == 0)
         {
             Free(p);
-            return (void*)alignment;
+            return nullptr;
         }
 
         size_t bucketIndex = FindBucket(p);
@@ -526,6 +509,24 @@ class Allocator
             }
 
             return (void*)alignment;
+        }
+
+        // check if we need to realloc from generic allocator to smmalloc
+        size_t __bytesCount = (bytesCount < alignment) ? alignment : bytesCount;
+        size_t __bucketIndex = ((__bytesCount - 1) >> 4);
+        if (__bucketIndex < bucketsCount)
+        {
+            void* p2 = Alloc(bytesCount, alignment);
+            // Assume that p is the pointer that is allocated by passing the zero size. No preserve memory conents is requried.
+            if (IsReadable(p))
+            {
+                size_t numBytes = GenericAllocator::GetUsableSpace(gAllocator, p);
+                // move the memory block to the new location
+                std::memmove(p2, p, std::min(numBytes, bytesCount));
+            }
+
+            GenericAllocator::Free(gAllocator, p);
+            return p2;
         }
 
         // Assume that p is the pointer that is allocated by passing the zero size. So no real reallocation required.

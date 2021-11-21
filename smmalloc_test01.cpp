@@ -123,15 +123,102 @@ TEST(SimpleTests, MegaAlloc)
     _sm_allocator_destroy(heap);
 }
 
+
+bool IsAligned(void* p, size_t alignment)
+{
+    uintptr_t v = uintptr_t(p);
+    size_t lowBits = v & (alignment - 1);
+    return (lowBits == 0);
+}
+
+
 TEST(SimpleTests, ReAlloc)
 {
     sm_allocator heap = _sm_allocator_create(5, (48 * 1024 * 1024));
 
     void* p = _sm_malloc(heap, 17, 16);
+    size_t s = _sm_msize(heap, p);
+    EXPECT_NE(p, nullptr);
+    EXPECT_TRUE(IsAligned(p, 16));
+    EXPECT_GE(s, 17);
     p = _sm_realloc(heap, p, 20, 16);
+    s = _sm_msize(heap, p);
+    EXPECT_NE(p, nullptr);
+    EXPECT_TRUE(IsAligned(p, 16));
+    EXPECT_GE(s, 20);
     p = _sm_realloc(heap, p, 50, 16);
+    s = _sm_msize(heap, p);
+    EXPECT_NE(p, nullptr);
+    EXPECT_TRUE(IsAligned(p, 16));
+    EXPECT_GE(s, 50);
     p = _sm_realloc(heap, p, 900, 16);
+    s = _sm_msize(heap, p);
+    EXPECT_NE(p, nullptr);
+    EXPECT_TRUE(IsAligned(p, 16));
+    EXPECT_GE(s, 900);
+
     _sm_free(heap, p);
+    p = nullptr;
+    s = _sm_msize(heap, p);
+    EXPECT_EQ(p, nullptr);
+    EXPECT_EQ(s, 0);
+
+
+    void* p2 = _sm_realloc(heap, nullptr, 15, 16);
+    size_t s2 = _sm_msize(heap, p2);
+    EXPECT_NE(p2, nullptr);
+    EXPECT_TRUE(IsAligned(p2, 16));
+    EXPECT_GE(s2, 15);
+
+    p2 = _sm_realloc(heap, p2, 0, 16);
+    s2 = _sm_msize(heap, p2);
+    EXPECT_EQ(p2, nullptr);
+    EXPECT_TRUE(IsAligned(p2, 16));
+    EXPECT_EQ(s2, 0);
+
+    _sm_free(heap, p2);
+    s2 = _sm_msize(heap, p2);
+    EXPECT_EQ(s2, 0);
+
+    void* p3 = _sm_realloc(heap, nullptr, 1024*1024, 16);
+    size_t s3 = _sm_msize(heap, p3);
+    EXPECT_NE(p3, nullptr);
+    EXPECT_TRUE(IsAligned(p3, 16));
+    EXPECT_GE(s3, 1024*1024);
+    p3 = _sm_realloc(heap, p3, 4, 8);
+    s3 = _sm_msize(heap, p3);
+    EXPECT_NE(p3, nullptr);
+    EXPECT_TRUE(IsAligned(p3, 8));
+    EXPECT_GE(s3, 4);
+    p3 = _sm_realloc(heap, p3, 0, 8);
+    s3 = _sm_msize(heap, p3);
+    EXPECT_EQ(p3, nullptr);
+    EXPECT_EQ(s3, 0);
+    _sm_free(heap, p3);
+    s3 = _sm_msize(heap, p3);
+    EXPECT_EQ(s3, 0);
+
+    void* p4 = _sm_malloc(heap, 2 * 1024 * 1024, 32);
+    size_t s4 = _sm_msize(heap, p4);
+    EXPECT_NE(p4, nullptr);
+    EXPECT_TRUE(IsAligned(p4, 32));
+    EXPECT_GE(s4, 2 * 1024 * 1024);
+
+    p4 = _sm_realloc(heap, p4, 1024 * 1024, 16);
+    s4 = _sm_msize(heap, p4);
+    EXPECT_NE(p4, nullptr);
+    EXPECT_TRUE(IsAligned(p4, 16));
+    EXPECT_GE(s4, 1024 * 1024);
+
+    p4 = _sm_realloc(heap, p4, 4 * 1024 * 1024, 64);
+    s4 = _sm_msize(heap, p4);
+    EXPECT_NE(p4, nullptr);
+    EXPECT_TRUE(IsAligned(p4, 64));
+    EXPECT_GE(s4, 4 * 1024 * 1024);
+    _sm_free(heap, p4);
+    p4 = nullptr;
+    s4 = _sm_msize(heap, p4);
+    EXPECT_EQ(s4, 0);
 
     _sm_allocator_destroy(heap);
 }
