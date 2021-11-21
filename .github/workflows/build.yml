@@ -11,6 +11,8 @@ jobs:
         defines: [standard]
     steps:
     - uses: actions/checkout@v1
+    - name: update submodule
+      run: git submodule update --init --recursive
     - name: configure
       run: dir && mkdir -p build && cd build && dir && cmake ..
     - name: build
