@@ -1,5 +1,6 @@
 #include <atomic>
 #include <chrono>
+#include <float.h>
 #include <thread>
 #include <ubench.h>
 #include <vector>
@@ -127,8 +128,8 @@ void printDebug(sm_allocator) {}
 #define DESTROY_HEAP
 #define ON_THREAD_START
 #define ON_THREAD_FINISHED
-#define MALLOC(size, align) _mm_malloc(size, align)
-#define FREE(p) _mm_free(p)
+#define MALLOC(size, align) malloc(size/*, align*/)
+#define FREE(p) free(p)
 #include "smmalloc_test_impl.inl"
 #undef ALLOCATOR_TEST_NAME
 #undef HEAP
@@ -460,7 +461,6 @@ UBENCH_EX(PerfTest, hoard_malloc_10m)
 
     hoardFinalize();
 }
-
 
 UBENCH_STATE();
 int main(int argc, const char* const argv[])
