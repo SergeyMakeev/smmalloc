@@ -14,9 +14,9 @@ jobs:
     - name: update submodule
       run: git submodule update --init --recursive
     - name: configure
-      run: dir && mkdir -p build && cd build && dir && cmake ..
+      run: mkdir build && cd build && cmake ..
     - name: build
-      run: cmake --build . --config Release
+      run: dir && cmake --build . --config Release
     - name: test
       run: "Release/smmalloc_test.exe"
     - name: perftest
