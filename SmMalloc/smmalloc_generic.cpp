@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// 	Copyright (c) 2017-2018 Sergey Makeev
+// 	Copyright (c) 2017-2021 Sergey Makeev
 //
 // 	Permission is hereby granted, free of charge, to any person obtaining a copy
 // 	of this software and associated documentation files (the "Software"), to deal
@@ -19,63 +19,53 @@
 // 	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // 	THE SOFTWARE.
-#include <malloc.h>
 #include "smmalloc.h"
+#include <malloc.h>
 
-
-sm::GenericAllocator::TInstance sm::GenericAllocator::Invalid()
-{
-	return nullptr;
-}
+sm::GenericAllocator::TInstance sm::GenericAllocator::Invalid() { return nullptr; }
 
 bool sm::GenericAllocator::IsValid(TInstance instance)
 {
-	SMMALLOC_UNUSED(instance);
-	return true;
+    SMMALLOC_UNUSED(instance);
+    return true;
 }
 
-sm::GenericAllocator::TInstance sm::GenericAllocator::Create()
-{
-	return nullptr;
-}
+sm::GenericAllocator::TInstance sm::GenericAllocator::Create() { return nullptr; }
 
-void sm::GenericAllocator::Destroy(sm::GenericAllocator::TInstance instance)
-{
-	SMMALLOC_UNUSED(instance);
-}
+void sm::GenericAllocator::Destroy(sm::GenericAllocator::TInstance instance) { SMMALLOC_UNUSED(instance); }
 
 void* sm::GenericAllocator::Alloc(sm::GenericAllocator::TInstance instance, size_t bytesCount, size_t alignment)
 {
-	SMMALLOC_UNUSED(instance);
-	if (alignment < 16)
-	{
-		alignment = 16;
-	}
-	return _aligned_malloc(bytesCount, alignment);
+    SMMALLOC_UNUSED(instance);
+    if (alignment < 16)
+    {
+        alignment = 16;
+    }
+    return _aligned_malloc(bytesCount, alignment);
 }
 
 void sm::GenericAllocator::Free(sm::GenericAllocator::TInstance instance, void* p)
 {
-	SMMALLOC_UNUSED(instance);
-	_aligned_free(p);
+    SMMALLOC_UNUSED(instance);
+    _aligned_free(p);
 }
 
 void* sm::GenericAllocator::Realloc(sm::GenericAllocator::TInstance instance, void* p, size_t bytesCount, size_t alignment)
 {
-	SMMALLOC_UNUSED(instance);
-	return _aligned_realloc(p, bytesCount, alignment);
+    SMMALLOC_UNUSED(instance);
+    return _aligned_realloc(p, bytesCount, alignment);
 }
 
 size_t sm::GenericAllocator::GetUsableSpace(sm::GenericAllocator::TInstance instance, void* p)
 {
-	SMMALLOC_UNUSED(instance);
-	size_t alignment = DetectAlignment(p);
-	#ifdef __GNUC__
-		if (alignment < sizeof(void*))
-			alignment = sizeof(void*);
+    SMMALLOC_UNUSED(instance);
+    size_t alignment = DetectAlignment(p);
+#ifdef __GNUC__
+    if (alignment < sizeof(void*))
+        alignment = sizeof(void*);
 
-		return _msize(p) - alignment - sizeof(void*);
-	#else
-		return _aligned_msize(p, alignment, 0);
-	#endif
+    return _msize(p) - alignment - sizeof(void*);
+#else
+    return _aligned_msize(p, alignment, 0);
+#endif
 }

@@ -1,0 +1,27 @@
+project "PerfTest"
+	kind "ConsoleApp"
+	flags {
+		"NoPCH",
+	}
+	files {
+		"PerfTest/*.cpp", 
+		"PerfTest/*.h",
+		"PerfTest/Hoard/Source/libhoard.cpp",
+		"PerfTest/Hoard/Source/wintls.cpp",
+		"PerfTest/rpmalloc/*.*",
+		"PerfTest/dlmalloc/*.*",
+		"PerfTest/ltalloc/*.cc",
+		"PerfTest/ltalloc/*.h",
+		"PerfTest/ltalloc/*.hpp",
+	}
+	includedirs {
+		"SmMalloc/",
+		"PerfTest/Hoard/Heap-Layers/",
+		"PerfTest/Hoard/include/",
+		"PerfTest/Hoard/include/util",
+		"PerfTest/Hoard/include/hoard",
+		"PerfTest/Hoard/include/superblocks",
+	}
+	links {
+		"SmMalloc",
+	}

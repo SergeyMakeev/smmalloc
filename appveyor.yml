@@ -1,10 +1,20 @@
-version: 1.0.{build}
+version: "{branch}-ci-{build}"
+image: Visual Studio 2017
+
+build: msvc
+platform: x86
+configuration: Debug
+
+install:
+- choco install opencppcoverage codecov
+- set PATH=C:\Program Files\OpenCppCoverage;%PATH%
 
 build_script:
-- genie.exe vs2015
-- cd Build/vs2015
-- MsBuild SmMalloc.sln /t:Rebuild /p:Configuration=Release
-
-test_script:
-- cd ..\..\Bin\vs2015\Release-x32\
-- Tests.exe
+- git submodule update --init --recursive
+- mkdir build
+- cd build
+- cmake ..
+- cd ..
+- cmake --build .\build\ --config Debug
+- OpenCppCoverage.exe --export_type=cobertura:cobertura.xml --sources smmalloc*.* --excluded_sources *extern* --modules *.exe -- .\build\Debug\smmalloc_test.exe
+- codecov -f cobertura.xml --root %APPVEYOR_BUILD_FOLDER% -t 6a61d791-c3f4-42c6-9c1b-5ccef78038b6
