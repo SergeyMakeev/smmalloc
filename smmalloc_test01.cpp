@@ -35,9 +35,9 @@ TEST(SimpleTests, Basic)
     EXPECT_NE(b, c);
     EXPECT_NE(c, d);
 
-    d1 = (uintptr_t)b - (uintptr_t)a;
-    d2 = (uintptr_t)c - (uintptr_t)b;
-    d3 = (uintptr_t)d - (uintptr_t)c;
+    //d1 = (uintptr_t)b - (uintptr_t)a;
+    //d2 = (uintptr_t)c - (uintptr_t)b;
+    //d3 = (uintptr_t)d - (uintptr_t)c;
 
     _sm_free(heap, d);
     _sm_free(heap, c);
