@@ -72,7 +72,7 @@ TEST(MultithreadingTests, StressTest)
         t.join();
     }
 
-    printf("Checking thread cache.\n");
+    printf("Checking thread cache\n");
 
     size_t count = 0;
     size_t bucketsCount = heap->GetBucketsCount();

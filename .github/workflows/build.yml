@@ -3,6 +3,29 @@ name: build
 on: [push]
 
 jobs:
+  build-unix:
+    strategy:
+      matrix:
+        os: [ubuntu, macos]
+        compiler: [g++, clang++]
+        defines: [standard]
+        exclude:
+          - os: macos
+            compiler: g++
+    name: ${{matrix.os}} ${{matrix.compiler}}
+    runs-on: ${{matrix.os}}-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Update submodules
+      run: git submodule update --init --recursive
+    - name: CMake Configure
+      run: mkdir build && cd build && cmake ..
+    - name: Build
+      run: cd build && cmake --build . --config Release
+    - name: Run unit tests
+      run: "./build/Release/smmalloc_test"
+    - name: Run performance tests
+      run: "./build/Release/smmalloc_perf"
   build-windows:
     runs-on: windows-latest
     strategy:
@@ -11,13 +34,13 @@ jobs:
         defines: [standard]
     steps:
     - uses: actions/checkout@v1
-    - name: update submodule
+    - name: Update submodules
       run: git submodule update --init --recursive
-    - name: configure
+    - name: CMake Configure
       run: mkdir build && cd build && cmake ..
-    - name: build
+    - name: Build
       run: cd build && cmake --build . --config Release
-    - name: test
+    - name: Run unit tests
       run: "build/Release/smmalloc_test.exe"
-    - name: perftest
+    - name: Run performance tests
       run: "build/Release/smmalloc_perf.exe"
