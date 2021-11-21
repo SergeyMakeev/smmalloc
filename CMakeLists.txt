@@ -27,8 +27,8 @@ endif()
 
 
 set(HOARD_SRC
-  ${PROJECT_SOURCE_DIR}/extern/hoard/Source/libhoard.cpp
-  ${PROJECT_SOURCE_DIR}/extern/hoard/Source/wintls.cpp
+  ${PROJECT_SOURCE_DIR}/extern/hoard/source/libhoard.cpp
+  ${PROJECT_SOURCE_DIR}/extern/hoard/source/wintls.cpp
 )
 
 set(LTALLOC_SRC
