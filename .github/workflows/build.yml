@@ -1,0 +1,25 @@
+name: build
+
+on:
+  push:
+    branches:
+      - 'master'
+  pull_request:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        arch: [Win32, x64]
+        defines: [standard]
+    steps:
+    - name: build and test
+      run: |
+        mkdir -p build
+        cd build
+        cmake ..
+        cmake --build . --config Release
+        dir
+        ./smmalloc_test.exe
+        ./smmalloc_perf.exe
