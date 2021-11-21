@@ -16,8 +16,8 @@ jobs:
     - name: configure
       run: mkdir build && cd build && cmake ..
     - name: build
-      run: dir && cmake --build . --config Release
+      run: cd build && cmake --build . --config Release
     - name: test
-      run: "Release/smmalloc_test.exe"
+      run: "build/Release/smmalloc_test.exe"
     - name: perftest
-      run: "Release/smmalloc_perf.exe"
+      run: "build/Release/smmalloc_perf.exe"
