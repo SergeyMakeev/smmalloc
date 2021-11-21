@@ -629,7 +629,7 @@ MAX_RELEASE_CHECK_RATE   default: 4095 unless not HAVE_MMAP
 #define FOOTERS 0
 #endif  /* FOOTERS */
 #ifndef ABORT
-#define ABORT  __debugbreak()
+#define ABORT  /*__debugbreak()*/
 #endif  /* ABORT */
 #ifndef ABORT_ON_ASSERT_FAILURE
 #define ABORT_ON_ASSERT_FAILURE 1
