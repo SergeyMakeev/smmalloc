@@ -15,7 +15,9 @@ jobs:
         defines: [standard]
     steps:
     - name: build and test
+      shell: bash
       run: |
+        dir
         mkdir -p build
         cd build
         cmake ..
