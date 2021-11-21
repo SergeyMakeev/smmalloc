@@ -140,6 +140,8 @@ void printDebug(sm_allocator) {}
 #undef MALLOC
 #undef FREE
 
+#if defined(_WIN32)
+
 // ============ hoard ============
 // https://github.com/emeryberger/Hoard
 extern "C"
@@ -171,6 +173,9 @@ extern "C"
 #undef ON_THREAD_FINISHED
 #undef MALLOC
 #undef FREE
+
+
+#endif
 
 // ============ ltalloc ============
 // https://github.com/r-lyeh-archived/ltalloc
@@ -471,7 +476,9 @@ int main(int argc, const char* const argv[])
     printf("name\tnum_threads\tops min\tops max\tops avg\ttime_min\ttime_max\n");
     DoTest_crt();
     DoTest_sm();
+#if defined(_WIN32)
     DoTest_hoard();
+#endif
     DoTest_lt();
     DoTest_rp();
     DoTest_dl_mt();

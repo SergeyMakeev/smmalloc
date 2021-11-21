@@ -25,11 +25,14 @@ else()
   target_compile_options(${TEST_EXE_NAME} PRIVATE -Wall -Wextra -pedantic -Werror)
 endif()
 
-
-set(HOARD_SRC
-  ${PROJECT_SOURCE_DIR}/extern/hoard/source/libhoard.cpp
-  ${PROJECT_SOURCE_DIR}/extern/hoard/source/wintls.cpp
-)
+if(MSVC)
+  set(HOARD_SRC
+    ${PROJECT_SOURCE_DIR}/extern/hoard/source/libhoard.cpp
+    ${PROJECT_SOURCE_DIR}/extern/hoard/source/wintls.cpp
+  )
+else()
+  set(HOARD_SRC )
+endif()
 
 set(LTALLOC_SRC
   ${PROJECT_SOURCE_DIR}/extern/ltalloc/ltalloc.cc
