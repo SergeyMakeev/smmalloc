@@ -23,7 +23,7 @@ jobs:
     - name: Build
       run: cd build && cmake --build . --config Release
     - name: Debug
-      run: ls
+      run: cd build && ls
     - name: Run unit tests
       run: "./build/Release/smmalloc_test"
     - name: Run performance tests
