@@ -429,6 +429,7 @@ UBENCH_EX(PerfTest, dlmalloc_10m)
     }
 }
 
+#if defined(_WIN32)
 // hoard ubench test
 UBENCH_EX(PerfTest, hoard_malloc_10m)
 {
@@ -466,6 +467,7 @@ UBENCH_EX(PerfTest, hoard_malloc_10m)
 
     hoardFinalize();
 }
+#endif
 
 UBENCH_STATE();
 int main(int argc, const char* const argv[])
