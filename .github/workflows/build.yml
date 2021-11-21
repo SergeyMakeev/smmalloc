@@ -23,9 +23,9 @@ jobs:
     - name: Build
       run: cd build && cmake --build . --config Release
     - name: Run unit tests
-      run: "./build/bin/smmalloc_test"
+      run: cd build && cd bin && ls && ./smmalloc_test
     - name: Run performance tests
-      run: "./build/bin/smmalloc_perf"
+      run: cd build && cd bin && ls && ./smmalloc_perf
   build-windows:
     runs-on: windows-latest
     strategy:
