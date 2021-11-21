@@ -17,9 +17,9 @@ TEST(SimpleTests, Basic)
     EXPECT_NE(b, c);
     EXPECT_NE(c, d);
 
-    ptrdiff_t d1 = (uintptr_t)b - (uintptr_t)a;
-    ptrdiff_t d2 = (uintptr_t)c - (uintptr_t)b;
-    ptrdiff_t d3 = (uintptr_t)d - (uintptr_t)c;
+    //ptrdiff_t d1 = (uintptr_t)b - (uintptr_t)a;
+    //ptrdiff_t d2 = (uintptr_t)c - (uintptr_t)b;
+    //ptrdiff_t d3 = (uintptr_t)d - (uintptr_t)c;
 
     _sm_free(heap, d);
     _sm_free(heap, c);
