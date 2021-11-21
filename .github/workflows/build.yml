@@ -22,14 +22,10 @@ jobs:
       run: mkdir build && cd build && cmake ..
     - name: Build
       run: cd build && cmake --build . --config Release
-    - name: Step1
-      run: ls
-    - name: Step2
-      run: cd build && ls
-    - name: Step3
-      run: cd build && cd bin && ls
-    - name: Step4
-      run: cd build && cd bin && ./smmalloc_test
+    - name: Run unit tests
+      run: cd build && ./smmalloc_test
+    - name: Run performance tests
+      run: cd build && ./smmalloc_perf
   build-windows:
     runs-on: windows-latest
     strategy:
