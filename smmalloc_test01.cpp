@@ -180,10 +180,10 @@ TEST(SimpleTests, ReAlloc)
     s2 = _sm_msize(heap, p2);
     EXPECT_EQ(s2, 0);
 
-    void* p3 = _sm_realloc(heap, nullptr, 1024*1024, 16);
+    void* p3 = _sm_realloc(heap, nullptr, 1024*1024, 1);
     size_t s3 = _sm_msize(heap, p3);
     EXPECT_NE(p3, nullptr);
-    EXPECT_TRUE(IsAligned(p3, 16));
+    EXPECT_TRUE(IsAligned(p3, sm::Allocator::kMinValidAlignment));
     EXPECT_GE(s3, 1024*1024);
     p3 = _sm_realloc(heap, p3, 4, 8);
     s3 = _sm_msize(heap, p3);
@@ -215,10 +215,13 @@ TEST(SimpleTests, ReAlloc)
     EXPECT_NE(p4, nullptr);
     EXPECT_TRUE(IsAligned(p4, 64));
     EXPECT_GE(s4, 4 * 1024 * 1024);
-    _sm_free(heap, p4);
+    p4 = _sm_realloc(heap, p4, 0, 32);
     p4 = nullptr;
     s4 = _sm_msize(heap, p4);
     EXPECT_EQ(s4, 0);
+
+    size_t s5 = sm::GenericAllocator::GetUsableSpace(sm::GenericAllocator::Invalid(), nullptr);
+    EXPECT_EQ(s5, 0);
 
     _sm_allocator_destroy(heap);
 }

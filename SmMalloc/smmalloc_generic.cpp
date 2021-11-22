@@ -43,9 +43,9 @@ void sm::GenericAllocator::Destroy(sm::GenericAllocator::TInstance instance) { S
 void* sm::GenericAllocator::Alloc(sm::GenericAllocator::TInstance instance, size_t bytesCount, size_t alignment)
 {
     SMMALLOC_UNUSED(instance);
-    if (alignment < 16)
+    if (alignment < sm::Allocator::kMinValidAlignment)
     {
-        alignment = 16;
+        alignment = sm::Allocator::kMinValidAlignment;
     }
     void* p;
     void** p2;

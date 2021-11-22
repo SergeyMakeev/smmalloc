@@ -166,13 +166,15 @@ struct GenericAllocator
 
 class Allocator
 {
+  public:
+    static const size_t kMinValidAlignment = 16;
 
   private:
-    static const size_t MaxValidAlignment = 16384;
+    static const size_t kMaxValidAlignment = 16384;
 
     friend struct internal::TlsPoolBucket;
 
-    INLINE bool IsReadable(void* p) const { return (uintptr_t(p) > MaxValidAlignment); }
+    INLINE bool IsReadable(void* p) const { return (uintptr_t(p) > kMaxValidAlignment); }
 
     struct PoolBucket
     {
@@ -358,7 +360,7 @@ class Allocator
 
     template <bool enableStatistic> INLINE void* Allocate(size_t _bytesCount, size_t alignment)
     {
-        SM_ASSERT(alignment <= MaxValidAlignment);
+        SM_ASSERT(alignment <= kMaxValidAlignment);
 
         // http://www.cplusplus.com/reference/cstdlib/malloc/
         // If size is zero, the return value depends on the particular library implementation (it may or may not be a null pointer),
@@ -462,6 +464,7 @@ class Allocator
 
     INLINE void* Realloc(void* p, size_t bytesCount, size_t alignment)
     {
+        // Assume that p is the pointer that is allocated by passing the zero size. So no real reallocation required.
         if (!IsReadable(p))
         {
             return Alloc(bytesCount, alignment);
@@ -507,8 +510,7 @@ class Allocator
             {
                 GenericAllocator::Free(gAllocator, p);
             }
-
-            return (void*)alignment;
+            return nullptr;
         }
 
         // check if we need to realloc from generic allocator to smmalloc
@@ -529,12 +531,7 @@ class Allocator
             return p2;
         }
 
-        // Assume that p is the pointer that is allocated by passing the zero size. So no real reallocation required.
-        if (!IsReadable(p))
-        {
-            return GenericAllocator::Alloc(gAllocator, bytesCount, alignment);
-        }
-
+        SM_ASSERT(IsReadable(p));
         return GenericAllocator::Realloc(gAllocator, p, bytesCount, alignment);
     }
 
