@@ -180,7 +180,6 @@ void Allocator::PoolBucket::Create(size_t elementSize)
         {
             TaggedIndex nextVal;
             nextVal.p.tag = globalTag.load(std::memory_order_relaxed);
-            ;
             nextVal.p.offset = (uint32_t)(next - pData);
             *((TaggedIndex*)(node)) = nextVal;
         }
