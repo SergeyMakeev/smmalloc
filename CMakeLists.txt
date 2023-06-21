@@ -82,8 +82,12 @@ target_include_directories(${PERF_EXE_NAME} PRIVATE "${PROJECT_SOURCE_DIR}/exter
 
 if(UNIX OR MACOS OR IOS)
   target_link_libraries(${PERF_EXE_NAME} pthread)
+else()
+  # add mimalloc
+  add_subdirectory("${PROJECT_SOURCE_DIR}/extern/mimalloc")
+  target_link_libraries(${TEST_EXE_NAME} mimalloc-static)
+  target_link_libraries(${PERF_EXE_NAME} mimalloc-static)
 endif()
-
 
 
 # add test allocators include dirs
@@ -95,7 +99,3 @@ target_include_directories(${PERF_EXE_NAME} PRIVATE "${PROJECT_SOURCE_DIR}/exter
 target_include_directories(${PERF_EXE_NAME} PRIVATE "${PROJECT_SOURCE_DIR}/extern/hoard/include/superblocks")
 target_include_directories(${PERF_EXE_NAME} PRIVATE "${PROJECT_SOURCE_DIR}/extern/rpmalloc")
 
-# add mimalloc
-add_subdirectory("${PROJECT_SOURCE_DIR}/extern/mimalloc")
-target_link_libraries(${TEST_EXE_NAME} mimalloc-static)
-target_link_libraries(${PERF_EXE_NAME} mimalloc-static)
