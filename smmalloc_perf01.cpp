@@ -7,10 +7,12 @@
 #include <smmalloc.h>
 #include <dlmalloc.h>
 #include <rpmalloc.h>
-#include <mimalloc.h>
-#include <hoard.h>
 #include <mutex>
 
+#if defined(_WIN32)
+#include <mimalloc.h>
+#include <hoard.h>
+#endif
 
 
 #define PASTER(x, y) x##y

@@ -3,8 +3,11 @@
 #include <smmalloc.h>
 #include <dlmalloc.h>
 #include <rpmalloc.h>
+
+#if defined(_WIN32)
 #include <mimalloc.h>
 #include <hoard.h>
+#endif
 
 
 struct UBenchGlobals
@@ -184,5 +187,41 @@ UBENCH_EX(PerfTest, hoard_malloc_10m)
 
     hoardFinalize();
 }
+
+// mamalloc ubench test
+UBENCH_EX(PerfTest, mi_malloc_10m)
+{
+    UBenchGlobals& g = UBenchGlobals::get();
+    size_t wsSize = g.workingSet.size();
+
+    UBENCH_DO_BENCHMARK()
+    {
+        size_t freeIndex = 0;
+        size_t allocIndex = wsSize - 1;
+
+        for (size_t i = 0; i < g.randomSequence.size(); i++)
+        {
+            size_t numBytesToAllocate = g.randomSequence[i];
+            void* ptr = mi_malloc(numBytesToAllocate);
+            memset(ptr, 33, numBytesToAllocate);
+
+            g.workingSet[allocIndex % wsSize] = ptr;
+            void* ptrToFree = g.workingSet[freeIndex % wsSize];
+            mi_free(ptrToFree);
+            g.workingSet[freeIndex % wsSize] = nullptr;
+
+            allocIndex++;
+            freeIndex++;
+        }
+
+        for (size_t i = 0; i < wsSize; i++)
+        {
+            mi_free(g.workingSet[i]);
+            g.workingSet[i] = nullptr;
+        }
+    }
+
+}
+
 #endif
 
