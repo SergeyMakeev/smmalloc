@@ -134,7 +134,7 @@ void TEST_ENTRYPOINT()
 
     const char* s = STRINGIFY(ALLOCATOR_TEST_NAME);
 
-    printf("%s\t%d\t%3.0f\t%3.0f\t%3.0f\t%3.2f\t%3.2f\n", s, PerfTestGlobals::kThreadsCount, opsMin, opsMax, opsAverage, timeMin, timeMax);
+    printf("%s;%d;%3.0f;%3.0f;%3.0f;%3.2f;%3.2f\n", s, PerfTestGlobals::kThreadsCount, opsMin, opsMax, opsAverage, timeMin, timeMax);
 
     DESTROY_HEAP;
 }

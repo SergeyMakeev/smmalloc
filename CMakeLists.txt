@@ -52,7 +52,9 @@ set(RPMALLOC_SRC
 
 # add perf test executable
 set(PERF_SOURCES 
+  smmalloc_perf_main.cpp
   smmalloc_perf01.cpp
+  smmalloc_perf02.cpp
   smmalloc_test_impl.inl
 )
 set (PERF_EXE_NAME ${PROJ_NAME}_perf)
@@ -65,7 +67,7 @@ else()
 endif()
 
 
-# add ecs2
+# add smmalloc
 add_subdirectory("${PROJECT_SOURCE_DIR}/SmMalloc")
 target_link_libraries(${TEST_EXE_NAME} smmalloc)
 target_link_libraries(${PERF_EXE_NAME} smmalloc)
@@ -75,7 +77,6 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 add_subdirectory("${PROJECT_SOURCE_DIR}/extern/googletest" "extern/googletest")
 target_link_libraries(${TEST_EXE_NAME} gtest_main)
 
-
 # add ubench
 target_include_directories(${PERF_EXE_NAME} PRIVATE "${PROJECT_SOURCE_DIR}/extern/ubench")
 
@@ -84,7 +85,9 @@ if(UNIX OR MACOS OR IOS)
 endif()
 
 
+
 # add test allocators include dirs
+target_include_directories(${PERF_EXE_NAME} PRIVATE "${PROJECT_SOURCE_DIR}/extern/dlmalloc")
 target_include_directories(${PERF_EXE_NAME} PRIVATE "${PROJECT_SOURCE_DIR}/extern/hoard/Heap-Layers")
 target_include_directories(${PERF_EXE_NAME} PRIVATE "${PROJECT_SOURCE_DIR}/extern/hoard/include")
 target_include_directories(${PERF_EXE_NAME} PRIVATE "${PROJECT_SOURCE_DIR}/extern/hoard/include/util")
@@ -92,6 +95,7 @@ target_include_directories(${PERF_EXE_NAME} PRIVATE "${PROJECT_SOURCE_DIR}/exter
 target_include_directories(${PERF_EXE_NAME} PRIVATE "${PROJECT_SOURCE_DIR}/extern/hoard/include/superblocks")
 target_include_directories(${PERF_EXE_NAME} PRIVATE "${PROJECT_SOURCE_DIR}/extern/rpmalloc")
 
-
-
-
+# add mimalloc
+add_subdirectory("${PROJECT_SOURCE_DIR}/extern/mimalloc")
+target_link_libraries(${TEST_EXE_NAME} mimalloc-static)
+target_link_libraries(${PERF_EXE_NAME} mimalloc-static)
