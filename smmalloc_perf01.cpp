@@ -276,6 +276,8 @@ void dl_free(void* p)
 #undef MALLOC
 #undef FREE
 
+#if defined(_WIN32)
+
 
 // ============ mimalloc ============
 // https://github.com/microsoft/mimalloc
@@ -297,6 +299,7 @@ void dl_free(void* p)
 #undef MALLOC
 #undef FREE
 
+#endif
 
 void compare_allocators()
 {
@@ -304,9 +307,10 @@ void compare_allocators()
     printf("name;num_threads;ops min;ops max;ops avg;time_min;time_max\n");
     //DoTest_crt();
     DoTest_sm();
-    DoTest_mi();
+   
 #if defined(_WIN32)
-    //DoTest_hoard();
+    DoTest_mi();
+    DoTest_hoard();
 #endif
     DoTest_lt();
     DoTest_rp();
