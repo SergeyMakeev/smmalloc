@@ -222,15 +222,6 @@ inline int GetNextPow2(uint32_t n)
 
 void Allocator::Init(uint32_t _bucketsCount, size_t _bucketSizeInBytes)
 {
-    for (size_t bucketIdx = 0; bucketIdx < 64; bucketIdx++)
-    {
-        printf("%zu->%zu,", bucketIdx, sm::getBucketSizeInBytesByIndex(bucketIdx));
-        //printf("[%zu] = %d bytes\n", bucketIdx, SmallFloat::floatToUint(uint32_t(bucketIdx)));
-
-        
-    }
-
-
     if (bucketsCount > 0)
     {
         // already initialized
