@@ -59,7 +59,7 @@ void TlsPoolBucket::Init(uint32_t* pCacheStack, uint32_t maxElementsNum, CacheWa
     }
 
     // warmup cache
-    uint32_t elementSize = alloc->GetBucketElementSize(bucketIndex);
+    size_t elementSize = sm::getBucketSizeInBytesByIndex(bucketIndex);
     uint32_t num = (warmupOptions == CACHE_WARM) ? (maxElementsCount / 2) : (maxElementsCount);
 
     CacheWarmupLink* pRoot = nullptr;
@@ -202,9 +202,6 @@ Allocator::Allocator(GenericAllocator::TInstance allocator)
     , pBuffer(nullptr, GenericAllocator::Deleter(allocator))
     , gAllocator(allocator)
 {
-#ifdef SMMALLOC_STATS_SUPPORT
-    globalMissCount.store(0);
-#endif
 }
 
 // Return the next power of 2 higher than the input
@@ -225,16 +222,30 @@ inline int GetNextPow2(uint32_t n)
 
 void Allocator::Init(uint32_t _bucketsCount, size_t _bucketSizeInBytes)
 {
+    for (size_t bucketIdx = 0; bucketIdx < 64; bucketIdx++)
+    {
+        printf("%zu->%zu,", bucketIdx, sm::getBucketSizeInBytesByIndex(bucketIdx));
+        //printf("[%zu] = %d bytes\n", bucketIdx, SmallFloat::floatToUint(uint32_t(bucketIdx)));
+
+        
+    }
+
+
     if (bucketsCount > 0)
     {
         // already initialized
         return;
     }
+    SM_ASSERT(_bucketsCount > 0 && _bucketsCount <= SMM_MAX_BUCKET_COUNT);
 
-    SM_ASSERT(_bucketsCount > 0 && _bucketsCount <= 64);
     if (_bucketsCount == 0)
     {
         return;
+    }
+
+    if (_bucketsCount >= SMM_MAX_BUCKET_COUNT)
+    {
+        _bucketsCount = SMM_MAX_BUCKET_COUNT;
     }
 
     bucketsCount = _bucketsCount;
@@ -251,15 +262,14 @@ void Allocator::Init(uint32_t _bucketsCount, size_t _bucketSizeInBytes)
     pBuffer.reset((uint8_t*)GenericAllocator::Alloc(gAllocator, totalBytesCount, alignmentMax));
     pBufferEnd = pBuffer.get() + totalBytesCount + 1;
 
-    size_t elementSize = 16;
     for (i = 0; i < bucketsCount; i++)
     {
         PoolBucket& bucket = buckets[i];
         bucket.pData = pBuffer.get() + i * bucketSizeInBytes;
-        SM_ASSERT(IsAligned(size_t(bucket.pData), GetNextPow2(uint32_t(elementSize))) && "Alignment failed");
         bucket.pBufferEnd = bucket.pData + bucketSizeInBytes;
-        bucket.Create(elementSize);
-        elementSize += 16;
+        size_t bucketSizeInBytes = getBucketSizeInBytesByIndex(i);
+        SM_ASSERT(IsAligned(size_t(bucket.pData), GetNextPow2(uint32_t(bucketSizeInBytes))) && "Alignment failed");
+        bucket.Create(bucketSizeInBytes);
         bucketsDataBegin[i] = bucket.pData;
     }
 }

@@ -63,16 +63,20 @@ struct PerfTestGlobals
 #ifdef SMMALLOC_STATS_SUPPORT
 void printDebug(sm_allocator heap)
 {
-    size_t globalMissesCount = heap->GetGlobalMissCount();
-    printf("Global Misses : %zu\n", globalMissesCount);
+    const sm::GlobalStats& gstats = heap->GetGlobalStats();
+    printf("Allocations attempts: %zu\n", gstats.totalNumAllocationAttempts.load());
+    printf("Allocations served: %zu\n", gstats.totalAllocationsServed.load());
+    printf("Allocated using default malloc: %zu\n", gstats.totalAllocationsRoutedToDefaultAllocator.load());
+    printf("  - Because of size %zu\n", gstats.routingReasonBySize.load());
+    printf("  - Because of saturation %zu\n", gstats.routingReasonSaturation.load());
 
     size_t bucketsCount = heap->GetBucketsCount();
     for (size_t bucketIndex = 0; bucketIndex < bucketsCount; bucketIndex++)
     {
         uint32_t elementsCount = heap->GetBucketElementsCount(bucketIndex);
-        uint32_t elementsSize = heap->GetBucketElementSize(bucketIndex);
-        printf("Bucket[%zu], Elements[%d], SizeOf[%d] -----\n", bucketIndex, elementsCount, elementsSize);
-        const sm::AllocatorStats* stats = heap->GetBucketStats(bucketIndex);
+        size_t elementsSize = sm::getBucketSizeInBytesByIndex(bucketIndex);
+        printf("Bucket[%zu], Elements[%d], SizeOf[%zu] -----\n", bucketIndex, elementsCount, elementsSize);
+        const sm::BucketStats* stats = heap->GetBucketStats(bucketIndex);
         if (!stats)
         {
             continue;

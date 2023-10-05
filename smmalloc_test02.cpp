@@ -52,7 +52,7 @@ void ThreadFunc(sm_allocator heap)
 
 TEST(MultithreadingTests, StressTest)
 {
-    sm_allocator heap = _sm_allocator_create(5, (48 * 1024 * 1024));
+    sm_allocator heap = _sm_allocator_create(10, (48 * 1024 * 1024));
 
     int threadsCount = std::thread::hardware_concurrency();
 #ifdef _DEBUG
@@ -84,9 +84,10 @@ TEST(MultithreadingTests, StressTest)
     std::vector<void*> ptrs;
     ptrs.reserve(count);
 
-    size_t elementSize = 16;
-    for (int32_t bucketIndex = 0; bucketIndex < (int32_t)bucketsCount; bucketIndex++, elementSize += 16)
+    for (int32_t bucketIndex = 0; bucketIndex < (int32_t)bucketsCount; bucketIndex++)
     {
+        size_t elementSize = sm::getBucketSizeInBytesByIndex(bucketIndex);
+
         size_t maxCount = heap->GetBucketElementsCount(bucketIndex);
 
         // check available space
@@ -186,13 +187,19 @@ TEST(MultithreadingTests, MtPerformance)
     printf("%" PRId64 " mt allocs took %3.2f sec, %3.2f operations per second\n", allocsCount, sec, allocsCount / sec);
 
 #ifdef SMMALLOC_STATS_SUPPORT
+    const sm::GlobalStats& gstats = heap->GetGlobalStats();
+    printf("Allocations attempts: %zu\n", gstats.totalNumAllocationAttempts.load());
+    printf("Allocations served: %zu\n", gstats.totalAllocationsServed.load());
+    printf("Allocated using default malloc: %zu\n", gstats.totalAllocationsRoutedToDefaultAllocator.load());
+    printf("  - Because of size %zu\n", gstats.routingReasonBySize.load());
+    printf("  - Because of saturation %zu\n", gstats.routingReasonSaturation.load());
     size_t bucketsCount = heap->GetBucketsCount();
     for (size_t bucketIndex = 0; bucketIndex < bucketsCount; bucketIndex++)
     {
         uint32_t elementsCount = heap->GetBucketElementsCount(bucketIndex);
-        uint32_t elementsSize = heap->GetBucketElementSize(bucketIndex);
-        printf("Bucket[%zu], Elements[%d], SizeOf[%d] -----\n", bucketIndex, elementsCount, elementsSize);
-        const sm::AllocatorStats* stats = heap->GetBucketStats(bucketIndex);
+        size_t elementsSize = sm::getBucketSizeInBytesByIndex(bucketIndex);
+        printf("Bucket[%zu], Elements[%d], SizeOf[%zu] -----\n", bucketIndex, elementsCount, elementsSize);
+        const sm::BucketStats* stats = heap->GetBucketStats(bucketIndex);
         if (!stats)
         {
             continue;

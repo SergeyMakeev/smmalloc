@@ -29,8 +29,6 @@
 #include <memory>
 #include <stdint.h>
 
-//#define SMMALLOC_STATS_SUPPORT
-
 #if __GNUC__ || __INTEL_COMPILER
 
 #define SM_UNLIKELY(expr) __builtin_expect(!!(expr), (0))
@@ -44,7 +42,12 @@
 #endif
 
 #ifdef _DEBUG
+
+// enable asserts in the debug build
 #define SMMALLOC_ENABLE_ASSERTS
+
+// enable stats in the debug build
+#define SMMALLOC_STATS_SUPPORT
 #endif
 
 #if defined(_M_X64) || _LP64
@@ -55,8 +58,48 @@
 #define SMM_MAX_CACHE_ITEMS_COUNT (10)
 #endif
 
+#ifndef SMM_CACHE_LINE_SIZE
 #define SMM_CACHE_LINE_SIZE (64)
-#define SMM_MAX_BUCKET_COUNT (8)
+#endif
+
+#ifndef SMM_MAX_BUCKET_COUNT
+#define SMM_MAX_BUCKET_COUNT (62)
+#endif
+
+#if !defined(SMM_LINEAR_PARTITIONING) && !defined(SMM_FLOAT_PARTITIONING)
+//#define SMM_LINEAR_PARTITIONING
+/*
+ 
+  Simple linear partitioning: every bucket size grow by 16 bytes
+  Note: fastest but can be wastefull because bucket size distribution is not ideal (works pretty well for a small number of buckets)
+
+  Bucket size table: ( bucket_index -> size_in_bytes )
+    0->16, 1->32, 2->48, 3->64, 4->80, 5->96, 6->112, 7->128, 8->144, 9->160, 10->176, 11->192, 12->208,
+    13->224, 14->240, 15->256, 16->272, 17->288, 18->304, 19->320, 20->336, 21->352, 22->368, 23->384, 24->400,
+    25->416, 26->432, 27->448, 28->464, 29->480, 30->496, 31->512, 32->528, 33->544, 34->560, 35->576, 36->592,
+    37->608, 38->624, 39->640, 40->656, 41->672, 42->688, 43->704, 44->720, 45->736, 46->752, 47->768, 48->784,
+    49->800, 50->816, 51->832, 52->848, 53->864, 54->880, 55->896, 56->912, 57->928, 58->944, 59->960, 60->976, 61->992
+*/
+
+#define SMM_FLOAT_PARTITIONING
+/*
+  Use Sebastian Aaltonen floating point partitioning idea (https://github.com/sebbbi/OffsetAllocator)
+  This is slightly slower than SMM_LINEAR_PARTITIONING but might be less wastefull in case if you need to handle big-enough allocations
+
+  Note: smmalloc floating point is different (2 bit mantissa + 6 bit exponent) and biased to better serve common C++ allocation sizes
+
+  Bucket size table: ( bucket_index -> size_in_bytes )
+    0->16, 1->20, 2->24, 3->28, 4->32, 5->40, 6->48, 7->56, 8->64, 9->80, 10->96, 11->112, 12->128,
+    13->160, 14->192, 15->224, 16->256, 17->320, 18->384, 19->448, 20->512, 21->640, 22->768, 23->896, 24->1024,
+    25->1280, 26->1536, 27->1792, 28->2048, 29->2560, 30->3072, 31->3584, 32->4096, 33->5120, 34->6144, 35->7168, 36->8192,
+    37->10240, 38->12288, 39->14336, 40->16384, 41->20480, 42->24576, 43->28672, 44->32768, 45->40960, 46->49152, 47->57344, 48->65536,
+    49->81920, 50->98304, 51->114688, 52->131072, 53->163840, 54->196608, 55->229376, 56->262144, 57->327680, 58->393216, 59->458752, 60->524288, 61->655360
+*/
+#endif
+
+#define SMM_MANTISSA_BITS uint32_t(2)
+#define SMM_MANTISSA_VALUE uint32_t(1 << SMM_MANTISSA_BITS)
+#define SMM_MANTISSA_MASK uint32_t(SMM_MANTISSA_VALUE - 1)
 
 #define SMMALLOC_UNUSED(x) (void)(x)
 #define SMMALLOC_USED_IN_ASSERT(x) (void)(x)
@@ -65,8 +108,8 @@
 #define INLINE __forceinline
 //#define INLINE inline
 #else
-//#define INLINE inline __attribute__((always_inline))
-#define INLINE inline
+#define INLINE inline __attribute__((always_inline))
+//#define INLINE inline
 #endif
 
 #ifdef _MSC_VER
@@ -91,14 +134,32 @@
 namespace sm
 {
 #ifdef SMMALLOC_STATS_SUPPORT
-struct AllocatorStats
+struct GlobalStats
+{
+    std::atomic<size_t> totalNumAllocationAttempts;
+    std::atomic<size_t> totalAllocationsServed;
+    std::atomic<size_t> totalAllocationsRoutedToDefaultAllocator;
+    std::atomic<size_t> routingReasonBySize;
+    std::atomic<size_t> routingReasonSaturation;
+
+    GlobalStats()
+    {
+        totalNumAllocationAttempts.store(0);
+        totalAllocationsServed.store(0);
+        totalAllocationsRoutedToDefaultAllocator.store(0);
+        routingReasonBySize.store(0);
+        routingReasonSaturation.store(0);
+    }
+};
+
+struct BucketStats
 {
     std::atomic<size_t> cacheHitCount;
     std::atomic<size_t> hitCount;
     std::atomic<size_t> missCount;
     std::atomic<size_t> freeCount;
 
-    AllocatorStats()
+    BucketStats()
     {
         cacheHitCount.store(0);
         hitCount.store(0);
@@ -106,14 +167,13 @@ struct AllocatorStats
         freeCount.store(0);
     }
 };
-
 #endif
 
 enum CacheWarmupOptions
 {
-    CACHE_COLD = 0,
-    CACHE_WARM = 1,
-    CACHE_HOT = 2,
+    CACHE_COLD = 0, // none tls buckets are filled from centralized storage
+    CACHE_WARM = 1, // half tls buckets are filled from centralized storage
+    CACHE_HOT = 2,  // all tls buckets are filled from centralized storage
 };
 
 namespace internal
@@ -122,6 +182,73 @@ struct TlsPoolBucket;
 }
 
 internal::TlsPoolBucket* GetTlsBucket(size_t index);
+
+#ifdef SMM_FLOAT_PARTITIONING
+
+namespace SmallFloat
+{
+
+INLINE uint32_t lzcnt_nonzero(uint32_t v)
+{
+#ifdef _MSC_VER
+    unsigned long retVal;
+    _BitScanReverse(&retVal, v);
+    return 31 - retVal;
+#else
+    return __builtin_clz(v);
+#endif
+}
+
+// Bin sizes follow floating point (exponent + mantissa) distribution (piecewise linear log approx)
+// This ensures that for each size class, the average overhead percentage stays the same
+INLINE uint32_t uintToFloatRoundUp(uint32_t size)
+{
+    uint32_t exp = 0;
+    uint32_t mantissa = 0;
+
+    if (size < SMM_MANTISSA_VALUE)
+    {
+        // Denorm: 0..(MANTISSA_VALUE-1)
+        mantissa = size;
+    }
+    else
+    {
+        // Normalized: Hidden high bit always 1. Not stored. Just like float.
+        uint32_t leadingZeros = lzcnt_nonzero(size);
+        uint32_t highestSetBit = 31 - leadingZeros;
+
+        uint32_t mantissaStartBit = highestSetBit - SMM_MANTISSA_BITS;
+        exp = mantissaStartBit + 1;
+        mantissa = (size >> mantissaStartBit) & SMM_MANTISSA_MASK;
+
+        uint32_t lowBitsMask = (1 << mantissaStartBit) - 1;
+
+        // Round up!
+        if ((size & lowBitsMask) != 0)
+            mantissa++;
+    }
+
+    return (exp << SMM_MANTISSA_BITS) + mantissa; // + allows mantissa->exp overflow for round up
+}
+
+INLINE uint32_t floatToUint(uint32_t floatValue)
+{
+    uint32_t exponent = floatValue >> SMM_MANTISSA_BITS;
+    uint32_t mantissa = floatValue & SMM_MANTISSA_MASK;
+    if (exponent == 0)
+    {
+        // Denorms
+        return mantissa;
+    }
+    else
+    {
+        return (mantissa | SMM_MANTISSA_VALUE) << (exponent - 1);
+    }
+}
+
+} // namespace SmallFloat
+
+#endif
 
 INLINE bool IsAligned(size_t v, size_t alignment)
 {
@@ -135,6 +262,34 @@ INLINE size_t Align(size_t val, size_t alignment)
     size_t r = (val + (alignment - 1)) & ~(alignment - 1);
     SM_ASSERT(IsAligned(r, alignment) && "Alignment failed.");
     return r;
+}
+
+INLINE size_t getBucketIndexBySize(size_t bytesCount)
+{
+#ifdef SMM_LINEAR_PARTITIONING
+    size_t bucketIndex = ((bytesCount - 1) >> 4);
+    return bucketIndex;
+#else
+    SM_ASSERT(bytesCount < UINT32_MAX && "Can't handle allocation size >= 4Gb");
+    uint32_t _bucketIndex = SmallFloat::uintToFloatRoundUp(uint32_t(bytesCount));
+    // remap to a proper range
+    uint32_t bucketIndex = (_bucketIndex < 12) ? 0 : (_bucketIndex - 12);
+    return size_t(bucketIndex);
+#endif
+}
+
+INLINE size_t getBucketSizeInBytesByIndex(size_t bucketIndex)
+{
+#ifdef SMM_LINEAR_PARTITIONING
+    size_t sizeInBytes = 16 + bucketIndex * 16;
+    return sizeInBytes;
+#else
+    // remap to a proper range
+    uint32_t _bucketIndex = uint32_t(bucketIndex) + 12;
+
+    uint32_t sizeInBytes = SmallFloat::floatToUint(_bucketIndex);
+    return size_t(sizeInBytes);
+#endif
 }
 
 struct GenericAllocator
@@ -195,7 +350,7 @@ class Allocator
         uint8_t* pBufferEnd;
 
 #ifdef SMMALLOC_STATS_SUPPORT
-        AllocatorStats stats;
+        BucketStats bucketStats;
 #endif
         PoolBucket()
             : head(TaggedIndex::Invalid)
@@ -320,7 +475,7 @@ class Allocator
     GenericAllocator::TInstance gAllocator;
 
 #ifdef SMMALLOC_STATS_SUPPORT
-    std::atomic<size_t> globalMissCount;
+    GlobalStats globalStats;
 #endif
 
     INLINE void* AllocFromCache(internal::TlsPoolBucket* __restrict _self) const;
@@ -370,11 +525,26 @@ class Allocator
             return (void*)alignment;
         }
 
+#ifdef SMMALLOC_STATS_SUPPORT
+        if (enableStatistic)
+        {
+            globalStats.totalNumAllocationAttempts.fetch_add(1, std::memory_order_relaxed);
+        }
+#endif
+
         size_t bytesCount = (_bytesCount < alignment) ? alignment : _bytesCount;
-        size_t bucketIndex = ((bytesCount - 1) >> 4);
+        size_t bucketIndex = getBucketIndexBySize(bytesCount);
+
+#ifdef SMMALLOC_STATS_SUPPORT
+        bool isValidBucket = false;
+#endif
 
         if (bucketIndex < bucketsCount)
         {
+#ifdef SMMALLOC_STATS_SUPPORT
+            isValidBucket = true;
+#endif
+
             // try to handle allocation using local thread cache
             void* pRes = AllocFromCache(GetTlsBucket(bucketIndex));
             if (pRes)
@@ -382,7 +552,8 @@ class Allocator
 #ifdef SMMALLOC_STATS_SUPPORT
                 if (enableStatistic)
                 {
-                    buckets[bucketIndex].stats.cacheHitCount.fetch_add(1, std::memory_order_relaxed);
+                    globalStats.totalAllocationsServed.fetch_add(1, std::memory_order_relaxed);
+                    buckets[bucketIndex].bucketStats.cacheHitCount.fetch_add(1, std::memory_order_relaxed);
                 }
 #endif
                 return pRes;
@@ -397,7 +568,8 @@ class Allocator
 #ifdef SMMALLOC_STATS_SUPPORT
                 if (enableStatistic)
                 {
-                    buckets[bucketIndex].stats.hitCount.fetch_add(1, std::memory_order_relaxed);
+                    globalStats.totalAllocationsServed.fetch_add(1, std::memory_order_relaxed);
+                    buckets[bucketIndex].bucketStats.hitCount.fetch_add(1, std::memory_order_relaxed);
                 }
 #endif
                 return pRes;
@@ -407,7 +579,7 @@ class Allocator
 #ifdef SMMALLOC_STATS_SUPPORT
                 if (enableStatistic)
                 {
-                    buckets[bucketIndex].stats.missCount.fetch_add(1, std::memory_order_relaxed);
+                    buckets[bucketIndex].bucketStats.missCount.fetch_add(1, std::memory_order_relaxed);
                 }
 #endif
             }
@@ -419,7 +591,15 @@ class Allocator
 #ifdef SMMALLOC_STATS_SUPPORT
         if (enableStatistic)
         {
-            globalMissCount.fetch_add(1, std::memory_order_relaxed);
+            if (isValidBucket)
+            {
+                globalStats.routingReasonSaturation.fetch_add(1, std::memory_order_relaxed);
+            }
+            else
+            {
+                globalStats.routingReasonBySize.fetch_add(1, std::memory_order_relaxed);
+            }
+            globalStats.totalAllocationsRoutedToDefaultAllocator.fetch_add(1, std::memory_order_relaxed);
         }
 #endif
         // fallback to generic allocator
@@ -445,7 +625,7 @@ class Allocator
         if (bucketIndex < bucketsCount)
         {
 #ifdef SMMALLOC_STATS_SUPPORT
-            buckets[bucketIndex].stats.freeCount.fetch_add(1, std::memory_order_relaxed);
+            buckets[bucketIndex].bucketStats.freeCount.fetch_add(1, std::memory_order_relaxed);
 #endif
 
             if (ReleaseToCache<true>(GetTlsBucket(bucketIndex), p))
@@ -479,7 +659,7 @@ class Allocator
         size_t bucketIndex = FindBucket(p);
         if (bucketIndex < bucketsCount)
         {
-            size_t elementSize = GetBucketElementSize(bucketIndex);
+            size_t elementSize = getBucketSizeInBytesByIndex(bucketIndex);
             if (bytesCount <= elementSize)
             {
                 // reuse existing memory
@@ -515,7 +695,7 @@ class Allocator
 
         // check if we need to realloc from generic allocator to smmalloc
         size_t __bytesCount = (bytesCount < alignment) ? alignment : bytesCount;
-        size_t __bucketIndex = ((__bytesCount - 1) >> 4);
+        size_t __bucketIndex = getBucketIndexBySize(__bytesCount);
         if (__bucketIndex < bucketsCount)
         {
             void* p2 = Alloc(bytesCount, alignment);
@@ -546,7 +726,7 @@ class Allocator
         size_t bucketIndex = FindBucket(p);
         if (bucketIndex < bucketsCount)
         {
-            size_t elementSize = GetBucketElementSize(bucketIndex);
+            size_t elementSize = getBucketSizeInBytesByIndex(bucketIndex);
             return elementSize;
         }
 
@@ -573,8 +753,6 @@ class Allocator
 
     INLINE size_t GetBucketsCount() const { return bucketsCount; }
 
-    INLINE uint32_t GetBucketElementSize(size_t bucketIndex) const { return (uint32_t)((bucketIndex + 1) * 16); }
-
     INLINE uint32_t GetBucketElementsCount(size_t bucketIndex) const
     {
         if (bucketIndex >= bucketsCount)
@@ -582,22 +760,22 @@ class Allocator
             return 0;
         }
 
-        size_t oneElementSize = GetBucketElementSize(bucketIndex);
+        size_t oneElementSize = getBucketSizeInBytesByIndex(bucketIndex);
         return (uint32_t)(bucketSizeInBytes / oneElementSize);
     }
 
 #ifdef SMMALLOC_STATS_SUPPORT
 
-    size_t GetGlobalMissCount() const { return globalMissCount.load(std::memory_order_relaxed); }
+    const GlobalStats& GetGlobalStats() const { return globalStats; }
 
-    const AllocatorStats* GetBucketStats(size_t bucketIndex) const
+    const BucketStats* GetBucketStats(size_t bucketIndex) const
     {
         const PoolBucket* bucket = GetBucketByIndex(bucketIndex);
         if (!bucket)
         {
             return nullptr;
         }
-        return &bucket->stats;
+        return &bucket->bucketStats;
     }
 
 #endif
@@ -742,6 +920,10 @@ template <bool useCacheL0> INLINE bool Allocator::ReleaseToCache(internal::TlsPo
 }
 
 } // namespace sm
+
+#undef SMM_MANTISSA_BITS
+#undef SMM_MANTISSA_VALUE
+#undef SMM_MANTISSA_MASK
 
 #define SMMALLOC_CSTYLE_FUNCS
 
