@@ -67,7 +67,7 @@
 #endif
 
 #if !defined(SMM_LINEAR_PARTITIONING) && !defined(SMM_FLOAT_PARTITIONING)
-//#define SMM_LINEAR_PARTITIONING
+#define SMM_LINEAR_PARTITIONING
 /*
  
   Simple linear partitioning: every bucket size grow by 16 bytes
@@ -81,10 +81,10 @@
     49->800, 50->816, 51->832, 52->848, 53->864, 54->880, 55->896, 56->912, 57->928, 58->944, 59->960, 60->976, 61->992
 */
 
-#define SMM_FLOAT_PARTITIONING
+//#define SMM_FLOAT_PARTITIONING
 /*
   Use Sebastian Aaltonen floating point partitioning idea (https://github.com/sebbbi/OffsetAllocator)
-  This is slightly slower than SMM_LINEAR_PARTITIONING but might be less wastefull in case if you need to handle big-enough allocations
+  This is SLOWER! than SMM_LINEAR_PARTITIONING but might be less wastefull in case if you need to handle big-enough allocations
 
   Note: smmalloc floating point is different (2 bit mantissa + 6 bit exponent) and biased to better serve common C++ allocation sizes
 

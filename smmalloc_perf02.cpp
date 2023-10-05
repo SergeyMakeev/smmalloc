@@ -49,7 +49,7 @@ UBENCH_EX(PerfTest, smmalloc_10m)
     UBenchGlobals& g = UBenchGlobals::get();
     size_t wsSize = g.workingSet.size();
 
-    sm_allocator space = _sm_allocator_create(5, (48 * 1024 * 1024));
+    sm_allocator space = _sm_allocator_create(12, (32 * 1024 * 1024));
 
     UBENCH_DO_BENCHMARK()
     {
@@ -77,6 +77,32 @@ UBENCH_EX(PerfTest, smmalloc_10m)
             g.workingSet[i] = nullptr;
         }
     }
+
+#ifdef SMMALLOC_STATS_SUPPORT
+    const sm::GlobalStats& gstats = space->GetGlobalStats();
+    printf("Allocations attempts: %zu\n", gstats.totalNumAllocationAttempts.load());
+    printf("Allocations served: %zu\n", gstats.totalAllocationsServed.load());
+    printf("Allocated using default malloc: %zu\n", gstats.totalAllocationsRoutedToDefaultAllocator.load());
+    printf("  - Because of size %zu\n", gstats.routingReasonBySize.load());
+    printf("  - Because of saturation %zu\n", gstats.routingReasonSaturation.load());
+    size_t bucketsCount = space->GetBucketsCount();
+    for (size_t bucketIndex = 0; bucketIndex < bucketsCount; bucketIndex++)
+    {
+        uint32_t elementsCount = space->GetBucketElementsCount(bucketIndex);
+        size_t elementsSize = sm::getBucketSizeInBytesByIndex(bucketIndex);
+        printf("Bucket[%zu], Elements[%d], SizeOf[%zu] -----\n", bucketIndex, elementsCount, elementsSize);
+        const sm::BucketStats* stats = space->GetBucketStats(bucketIndex);
+        if (!stats)
+        {
+            continue;
+        }
+
+        printf("    Cache Hit : %zu\n", stats->cacheHitCount.load());
+        printf("    Hits : %zu\n", stats->hitCount.load());
+        printf("    Misses : %zu\n", stats->missCount.load());
+        printf("    Operations : %zu\n", stats->cacheHitCount.load() + stats->hitCount.load() + stats->missCount.load());
+    }
+#endif
 
     _sm_allocator_destroy(space);
 }

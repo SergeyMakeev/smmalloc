@@ -95,7 +95,7 @@ void printDebug(sm_allocator) {}
 // ============ smmalloc with thread cache enabled ============
 #define ALLOCATOR_TEST_NAME sm
 #define HEAP sm_allocator
-#define CREATE_HEAP _sm_allocator_create(5, (48 * 1024 * 1024))
+#define CREATE_HEAP _sm_allocator_create(10, (48 * 1024 * 1024))
 #define DESTROY_HEAP                                                                                                                       \
     printDebug(heap);                                                                                                                      \
     _sm_allocator_destroy(heap)
@@ -116,7 +116,7 @@ void printDebug(sm_allocator) {}
 // ============ smmalloc with thread cache disabled ============
 #define ALLOCATOR_TEST_NAME sm_tcd
 #define HEAP sm_allocator
-#define CREATE_HEAP _sm_allocator_create(5, (48 * 1024 * 1024))
+#define CREATE_HEAP _sm_allocator_create(10, (48 * 1024 * 1024))
 #define DESTROY_HEAP                                                                                                                       \
     printDebug(heap);                                                                                                                      \
     _sm_allocator_destroy(heap)
