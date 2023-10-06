@@ -322,10 +322,10 @@ struct GenericAllocator
 class Allocator
 {
   public:
-    static const size_t kMinValidAlignment = 16;
+    static const size_t kMinValidAlignment = 4;
 
   private:
-    static const size_t kMaxValidAlignment = 128;
+    static const size_t kMaxValidAlignment = 4096;
 
     friend struct internal::TlsPoolBucket;
 
@@ -539,8 +539,7 @@ class Allocator
         bool isValidBucket = false;
 #endif
         
-        // only allocate from thread-local cache is alignment is compatible
-        if (bucketIndex < bucketsCount && IsAligned(alignment, 16))
+        if (bucketIndex < bucketsCount)
         {
 #ifdef SMMALLOC_STATS_SUPPORT
             isValidBucket = true;

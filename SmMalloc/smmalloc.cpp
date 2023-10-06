@@ -68,7 +68,7 @@ void TlsPoolBucket::Init(uint32_t* pCacheStack, uint32_t maxElementsNum, CacheWa
     for (uint32_t j = 0; j < num; j++)
     {
         // allocate from global (pThreadCache is still nullptr)
-        void* p = alloc->Allocate<false>(elementSize, 16);
+        void* p = alloc->Allocate<false>(elementSize, Allocator::kMinValidAlignment);
         if (p == nullptr)
         {
             break;
@@ -260,6 +260,7 @@ void Allocator::Init(uint32_t _bucketsCount, size_t _bucketSizeInBytes)
         bucket.pData = pBuffer.get() + i * bucketSizeInBytes;
         bucket.pBufferEnd = bucket.pData + bucketSizeInBytes;
         size_t bucketSizeInBytes = getBucketSizeInBytesByIndex(i);
+        SM_ASSERT(IsAligned(bucketSizeInBytes, kMinValidAlignment));
         SM_ASSERT(IsAligned(size_t(bucket.pData), alignmentMax) && "Incorrect alignment detected!");
         bucket.Create(bucketSizeInBytes);
         bucketsDataBegin[i] = bucket.pData;
