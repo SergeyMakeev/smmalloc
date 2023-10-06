@@ -64,11 +64,16 @@ struct PerfTestGlobals
 void printDebug(sm_allocator heap)
 {
     const sm::GlobalStats& gstats = heap->GetGlobalStats();
-    printf("Allocations attempts: %zu\n", gstats.totalNumAllocationAttempts.load());
-    printf("Allocations served: %zu\n", gstats.totalAllocationsServed.load());
-    printf("Allocated using default malloc: %zu\n", gstats.totalAllocationsRoutedToDefaultAllocator.load());
-    printf("  - Because of size %zu\n", gstats.routingReasonBySize.load());
-    printf("  - Because of saturation %zu\n", gstats.routingReasonSaturation.load());
+    size_t numAllocationAttempts = gstats.totalNumAllocationAttempts.load();
+    size_t numAllocationsServed = gstats.totalAllocationsServed.load();
+    size_t numAllocationsRouted = gstats.totalAllocationsRoutedToDefaultAllocator.load();
+    double servedPercentage = (numAllocationAttempts == 0) ? 0.0 : (double(numAllocationsServed) / double(numAllocationAttempts) * 100.0);
+    double routedPercentage = (numAllocationAttempts == 0) ? 0.0 : (double(numAllocationsRouted) / double(numAllocationAttempts) * 100.0);
+    printf("Allocation attempts: %zu\n", numAllocationAttempts);
+    printf("Allocations served: %zu (%3.2f%%)\n", numAllocationsServed, servedPercentage);
+    printf("Allocated using default malloc: %zu (%3.2f%%)\n", numAllocationsRouted, routedPercentage);
+    printf("  - Because of size: %zu\n", gstats.routingReasonBySize.load());
+    printf("  - Because of saturation: %zu\n", gstats.routingReasonSaturation.load());
 
     size_t bucketsCount = heap->GetBucketsCount();
     for (size_t bucketIndex = 0; bucketIndex < bucketsCount; bucketIndex++)

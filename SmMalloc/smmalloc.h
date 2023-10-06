@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// 	Copyright (c) 2017-2021 Sergey Makeev
+// 	Copyright (c) 2017-2023 Sergey Makeev
 //
 // 	Permission is hereby granted, free of charge, to any person obtaining a copy
 // 	of this software and associated documentation files (the "Software"), to deal
