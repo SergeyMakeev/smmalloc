@@ -53,13 +53,14 @@ void TlsPoolBucket::Init(uint32_t* pCacheStack, uint32_t maxElementsNum, CacheWa
     SM_ASSERT(pBucket);
     pBucketData = pBucket->pData;
 
-    if (warmupOptions == CACHE_COLD)
+    // warmup cache
+    size_t elementSize = sm::getBucketSizeInBytesByIndex(bucketIndex);
+
+    if (warmupOptions == CACHE_COLD || !IsAligned(elementSize, 16))
     {
         return;
     }
 
-    // warmup cache
-    size_t elementSize = sm::getBucketSizeInBytesByIndex(bucketIndex);
     uint32_t num = (warmupOptions == CACHE_WARM) ? (maxElementsCount / 2) : (maxElementsCount);
 
     CacheWarmupLink* pRoot = nullptr;
@@ -141,7 +142,7 @@ void Allocator::CreateThreadCache(CacheWarmupOptions warmupOptions, std::initial
         uint32_t elementsNum = _elementsNum + SMM_MAX_CACHE_ITEMS_COUNT;
 
         // allocate stack for cache
-        uint32_t* localStack = (uint32_t*)GenericAllocator::Alloc(gAllocator, elementsNum * sizeof(uint32_t), 64);
+        uint32_t* localStack = (uint32_t*)GenericAllocator::Alloc(gAllocator, elementsNum * sizeof(uint32_t), kMaxValidAlignment);
 
         // initialize
         GetTlsBucket(i)->Init(localStack, elementsNum, warmupOptions, this, i);
@@ -240,8 +241,8 @@ void Allocator::Init(uint32_t _bucketsCount, size_t _bucketSizeInBytes)
     }
 
     bucketsCount = _bucketsCount;
-    size_t alignmentMax = GetNextPow2((uint32_t)(16 * bucketsCount));
-    bucketSizeInBytes = Align(_bucketSizeInBytes, alignmentMax);
+    size_t alignmentMax = kMaxValidAlignment;
+    bucketSizeInBytes = Align(_bucketSizeInBytes, kMaxValidAlignment);
 
     size_t i = 0;
     for (i = 0; i < bucketsDataBegin.size(); i++)

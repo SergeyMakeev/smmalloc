@@ -4,6 +4,42 @@
 #include <smmalloc.h>
 #include <vector>
 
+bool IsAligned(void* p, size_t alignment)
+{
+    uintptr_t v = uintptr_t(p);
+    size_t lowBits = v & (alignment - 1);
+    return (lowBits == 0);
+}
+
+
+
+TEST(SimpleTests, AlignmentTest)
+{
+    sm_allocator heap = _sm_allocator_create(5, (48 * 1024 * 1024));
+
+    for (size_t iter = 0; iter < 10000; iter++)
+    {
+        void* p1 = _sm_malloc(heap, 20, 1);
+        ASSERT_TRUE(IsAligned(p1, 1));
+        void* p2 = _sm_malloc(heap, 20, 2);
+        ASSERT_TRUE(IsAligned(p2, 2));
+        void* p4 = _sm_malloc(heap, 20, 4);
+        ASSERT_TRUE(IsAligned(p4, 4));
+        void* p8 = _sm_malloc(heap, 20, 8);
+        ASSERT_TRUE(IsAligned(p8, 8));
+        void* p16 = _sm_malloc(heap, 20, 16);
+        ASSERT_TRUE(IsAligned(p16, 16));
+        void* p32 = _sm_malloc(heap, 20, 32);
+        ASSERT_TRUE(IsAligned(p32, 32));
+        void* p64 = _sm_malloc(heap, 20, 64);
+        ASSERT_TRUE(IsAligned(p64, 64));
+        void* p128 = _sm_malloc(heap, 20, 128);
+        ASSERT_TRUE(IsAligned(p128, 128));
+    }
+
+    _sm_allocator_destroy(heap);
+}
+
 TEST(SimpleTests, Basic)
 {
     sm_allocator heap = _sm_allocator_create(5, (48 * 1024 * 1024));
@@ -132,14 +168,6 @@ TEST(SimpleTests, MegaAlloc)
 
     _sm_allocator_thread_cache_destroy(heap);
     _sm_allocator_destroy(heap);
-}
-
-
-bool IsAligned(void* p, size_t alignment)
-{
-    uintptr_t v = uintptr_t(p);
-    size_t lowBits = v & (alignment - 1);
-    return (lowBits == 0);
 }
 
 

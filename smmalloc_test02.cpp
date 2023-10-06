@@ -95,7 +95,8 @@ TEST(MultithreadingTests, StressTest)
         void* p = nullptr;
         for (;; availCount++)
         {
-            p = _sm_malloc(heap, elementSize, 16);
+            // set alignement to 1 to avoid internal size alignment (based on requested alignemnt size)
+            p = _sm_malloc(heap, elementSize, 1);
             ptrs.push_back(p);
             if (_sm_mbucket(heap, p) != bucketIndex)
             {

@@ -325,7 +325,7 @@ class Allocator
     static const size_t kMinValidAlignment = 16;
 
   private:
-    static const size_t kMaxValidAlignment = 16384;
+    static const size_t kMaxValidAlignment = 128;
 
     friend struct internal::TlsPoolBucket;
 
@@ -532,19 +532,19 @@ class Allocator
         }
 #endif
 
-        size_t bytesCount = (_bytesCount < alignment) ? alignment : _bytesCount;
+        size_t bytesCount = Align(_bytesCount, alignment);
         size_t bucketIndex = getBucketIndexBySize(bytesCount);
 
 #ifdef SMMALLOC_STATS_SUPPORT
         bool isValidBucket = false;
 #endif
-
-        if (bucketIndex < bucketsCount)
+        
+        // only allocate from thread-local cache is alignment is compatible
+        if (bucketIndex < bucketsCount && IsAligned(alignment, 16))
         {
 #ifdef SMMALLOC_STATS_SUPPORT
             isValidBucket = true;
 #endif
-
             // try to handle allocation using local thread cache
             void* pRes = AllocFromCache(GetTlsBucket(bucketIndex));
             if (pRes)
@@ -694,7 +694,7 @@ class Allocator
         }
 
         // check if we need to realloc from generic allocator to smmalloc
-        size_t __bytesCount = (bytesCount < alignment) ? alignment : bytesCount;
+        size_t __bytesCount = Align(bytesCount, alignment);
         size_t __bucketIndex = getBucketIndexBySize(__bytesCount);
         if (__bucketIndex < bucketsCount)
         {
