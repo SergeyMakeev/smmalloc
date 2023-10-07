@@ -391,9 +391,9 @@ class Allocator
         
         PoolBucket()
             : head(TaggedIndex::Invalid)
-            , globalTag(0)
             , pData(nullptr)
             , pBufferEnd(nullptr)
+            , globalTag(0)
         {
         }
 
