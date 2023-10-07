@@ -147,20 +147,36 @@ namespace sm
 #ifdef SMMALLOC_STATS_SUPPORT
 struct GlobalStats
 {
-    std::atomic<size_t> totalNumAllocationAttempts = 0;
-    std::atomic<size_t> totalAllocationsServed = 0;
-    std::atomic<size_t> totalAllocationsRoutedToDefaultAllocator = 0;
-    std::atomic<size_t> routingReasonBySize = 0;
-    std::atomic<size_t> routingReasonSaturation = 0;
-    std::atomic<size_t> wastedBytes = 0;
+    std::atomic<size_t> totalNumAllocationAttempts;
+    std::atomic<size_t> totalAllocationsServed;
+    std::atomic<size_t> totalAllocationsRoutedToDefaultAllocator;
+    std::atomic<size_t> routingReasonBySize;
+    std::atomic<size_t> routingReasonSaturation;
+    
+    GlobalStats()
+    {
+        totalNumAllocationAttempts.store(0);
+        totalAllocationsServed.store(0);
+        totalAllocationsRoutedToDefaultAllocator.store(0);
+        routingReasonBySize.store(0);
+        routingReasonSaturation.store(0);
+    }
 };
 
 struct BucketStats
 {
-    std::atomic<size_t> cacheHitCount = 0;
-    std::atomic<size_t> hitCount = 0;
-    std::atomic<size_t> missCount = 0;
-    std::atomic<size_t> freeCount = 0;
+    std::atomic<size_t> cacheHitCount;
+    std::atomic<size_t> hitCount;
+    std::atomic<size_t> missCount;
+    std::atomic<size_t> freeCount;
+    
+    BucketStats()
+    {
+        cacheHitCount.store(0);
+        hitCount.store(0);
+        missCount.store(0);
+        freeCount.store(0);
+    }
 };
 #endif
 
