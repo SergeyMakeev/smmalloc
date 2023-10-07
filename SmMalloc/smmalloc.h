@@ -374,20 +374,29 @@ class Allocator
         };
 
         // 8 bytes
-        std::atomic<uint64_t> head = TaggedIndex::Invalid;
+        std::atomic<uint64_t> head;
         // 4/8 bytes
-        uint8_t* pData = nullptr;
+        uint8_t* pData;
         // 4/8 bytes
-        uint8_t* pBufferEnd = nullptr;
+        uint8_t* pBufferEnd;
         // 4 bytes
-        std::atomic<uint32_t> globalTag = 0;
+        std::atomic<uint32_t> globalTag;
 
         // 64 bytes
-        char padding[SMM_CACHE_LINE_SIZE] = {0};
+        char padding[SMM_CACHE_LINE_SIZE];
 
 #ifdef SMMALLOC_STATS_SUPPORT
         BucketStats bucketStats;
 #endif
+        
+        PoolBucket()
+            : head(TaggedIndex::Invalid)
+            , globalTag(0)
+            , pData(nullptr)
+            , pBufferEnd(nullptr)
+        {
+        }
+
         void Create(size_t elementSize);
 
         SMM_INLINE void* Alloc()
