@@ -317,7 +317,7 @@ void compare_allocators()
 {
     printf("\n");
     printf("name\tnum_threads\tops_min\tops_max\tops_avg\ttime_min\ttime_max\n");
-    //DoTest_crt();
+    DoTest_crt();
     DoTest_sm();
    
 #if defined(_WIN32)
