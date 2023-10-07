@@ -49,7 +49,7 @@ UBENCH_EX(PerfTest, smmalloc_10m)
     UBenchGlobals& g = UBenchGlobals::get();
     size_t wsSize = g.workingSet.size();
 
-    sm_allocator space = _sm_allocator_create(12, (32 * 1024 * 1024));
+    sm_allocator space = _sm_allocator_create(20, (48 * 1024 * 1024));
 
     UBENCH_DO_BENCHMARK()
     {
@@ -59,7 +59,7 @@ UBENCH_EX(PerfTest, smmalloc_10m)
         for (size_t i = 0; i < g.randomSequence.size(); i++)
         {
             size_t numBytesToAllocate = g.randomSequence[i];
-            void* ptr = _sm_malloc(space, numBytesToAllocate, 16);
+            void* ptr = _sm_malloc(space, numBytesToAllocate, 1);
             memset(ptr, 33, numBytesToAllocate);
 
             g.workingSet[allocIndex % wsSize] = ptr;

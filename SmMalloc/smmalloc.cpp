@@ -68,7 +68,7 @@ void TlsPoolBucket::Init(uint32_t* pCacheStack, uint32_t maxElementsNum, CacheWa
     for (uint32_t j = 0; j < num; j++)
     {
         // allocate from global (pThreadCache is still nullptr)
-        void* p = alloc->Allocate<false>(elementSize, Allocator::kMinValidAlignment);
+        void* p = alloc->Allocate<false>(elementSize, Allocator::kDefaultTlsCacheAlignment);
         if (p == nullptr)
         {
             break;
@@ -142,7 +142,7 @@ void Allocator::CreateThreadCache(CacheWarmupOptions warmupOptions, std::initial
         uint32_t elementsNum = _elementsNum + SMM_MAX_CACHE_ITEMS_COUNT;
 
         // allocate stack for cache
-        uint32_t* localStack = (uint32_t*)GenericAllocator::Alloc(gAllocator, elementsNum * sizeof(uint32_t), kMaxValidAlignment);
+        uint32_t* localStack = (uint32_t*)GenericAllocator::Alloc(gAllocator, elementsNum * sizeof(uint32_t), SMM_CACHE_LINE_SIZE);
 
         // initialize
         GetTlsBucket(i)->Init(localStack, elementsNum, warmupOptions, this, i);
@@ -208,7 +208,7 @@ Allocator::Allocator(GenericAllocator::TInstance allocator)
 // Return the next power of 2 higher than the input
 // If the input is already a power of 2, the output will be the same as the input.
 // Got this from Brian Sharp's SWEng mailing list.
-inline int GetNextPow2(uint32_t n)
+SMM_INLINE int GetNextPow2(uint32_t n)
 {
     n -= 1;
 
@@ -223,6 +223,13 @@ inline int GetNextPow2(uint32_t n)
 
 void Allocator::Init(uint32_t _bucketsCount, size_t _bucketSizeInBytes)
 {
+    /*
+    for (size_t bucketIdx = 0; bucketIdx < 64; bucketIdx++)
+    {
+        printf("%zu->%zu, ", bucketIdx, sm::getBucketSizeInBytesByIndex(bucketIdx));
+    }
+    */
+
     if (bucketsCount > 0)
     {
         // already initialized

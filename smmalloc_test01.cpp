@@ -11,9 +11,16 @@ bool IsAligned(void* p, size_t alignment)
     return (lowBits == 0);
 }
 
+bool _IsAligned(size_t v, size_t alignment)
+{
+    size_t lowBits = v & (alignment - 1);
+    return (lowBits == 0);
+}
 
 
-TEST(SimpleTests, AlignmentTest)
+
+
+TEST(SimpleTests, AlignmentTest01)
 {
     sm_allocator heap = _sm_allocator_create(5, (48 * 1024 * 1024));
 
@@ -39,6 +46,47 @@ TEST(SimpleTests, AlignmentTest)
 
     _sm_allocator_destroy(heap);
 }
+
+TEST(SimpleTests, AlignmentTest02)
+{
+    sm_allocator heap = _sm_allocator_create(32, (2 * 1024 * 1024));
+    void* p128 = _sm_malloc(heap, 20, 128);
+    ASSERT_TRUE(IsAligned(p128, 128));
+
+    int32_t bucketIndex = _sm_mbucket(heap, p128);
+    ASSERT_TRUE(bucketIndex >= 0);
+
+    uint32_t elementsCount = heap->GetBucketElementsCount(bucketIndex);
+
+    for (uint32_t iter = 0; iter < (elementsCount*4); iter++)
+    {
+        void* _p128 = _sm_malloc(heap, 20, 128);
+        ASSERT_TRUE(IsAligned(_p128, 128));
+    }
+
+    _sm_allocator_destroy(heap);
+}
+
+TEST(SimpleTests, BucketSizeTest)
+{
+    for (size_t elemSize = 1; elemSize < (1024 * 1024); elemSize++)
+    {
+        size_t bucketIndex = sm::getBucketIndexBySize(elemSize);
+        size_t bucketSizeInBytes = sm::getBucketSizeInBytesByIndex(bucketIndex);
+        ASSERT_TRUE(elemSize <= bucketSizeInBytes);
+    }
+}
+
+TEST(SimpleTests, BucketSizeAlignment)
+{
+    // make sure bucket sizes are at least aligned to kMinValidAlignment
+    for (size_t bucketIndex = 0; bucketIndex < SMM_MAX_BUCKET_COUNT; bucketIndex++)
+    {
+        size_t bucketSizeInBytes = sm::getBucketSizeInBytesByIndex(bucketIndex);
+        ASSERT_TRUE(_IsAligned(bucketSizeInBytes, sm::Allocator::kMinValidAlignment));
+    }
+}
+
 
 TEST(SimpleTests, Basic)
 {

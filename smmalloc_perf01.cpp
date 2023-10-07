@@ -100,11 +100,12 @@ void printDebug(sm_allocator) {}
 // ============ smmalloc with thread cache enabled ============
 #define ALLOCATOR_TEST_NAME sm
 #define HEAP sm_allocator
-#define CREATE_HEAP _sm_allocator_create(10, (48 * 1024 * 1024))
+#define CREATE_HEAP _sm_allocator_create(10, (64 * 1024 * 1024))
 #define DESTROY_HEAP                                                                                                                       \
     printDebug(heap);                                                                                                                      \
     _sm_allocator_destroy(heap)
-#define ON_THREAD_START _sm_allocator_thread_cache_create(heap, sm::CACHE_WARM, {16384, 131072, 131072, 131072, 131072})
+#define ON_THREAD_START                                                                                                                    \
+    _sm_allocator_thread_cache_create(heap, sm::CACHE_WARM, {16384, 131072, 131072, 131072, 131072, 131072, 131072, 131072, 131072, 131072})
 #define ON_THREAD_FINISHED _sm_allocator_thread_cache_destroy(heap)
 #define MALLOC(size, align) _sm_malloc(heap, size, align)
 #define FREE(p) _sm_free(heap, p)
@@ -121,7 +122,7 @@ void printDebug(sm_allocator) {}
 // ============ smmalloc with thread cache disabled ============
 #define ALLOCATOR_TEST_NAME sm_tcd
 #define HEAP sm_allocator
-#define CREATE_HEAP _sm_allocator_create(10, (48 * 1024 * 1024))
+#define CREATE_HEAP _sm_allocator_create(10, (64 * 1024 * 1024))
 #define DESTROY_HEAP                                                                                                                       \
     printDebug(heap);                                                                                                                      \
     _sm_allocator_destroy(heap)
@@ -315,7 +316,7 @@ void dl_free(void* p)
 void compare_allocators()
 {
     printf("\n");
-    printf("name;num_threads;ops min;ops max;ops avg;time_min;time_max\n");
+    printf("name\tnum_threads\tops_min\tops_max\tops_avg\ttime_min\ttime_max\n");
     //DoTest_crt();
     DoTest_sm();
    

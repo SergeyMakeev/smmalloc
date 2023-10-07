@@ -8,10 +8,10 @@
 void ThreadFunc(sm_allocator heap)
 {
     SM_ASSERT(heap != nullptr);
-    _sm_allocator_thread_cache_create(heap, sm::CACHE_WARM, {32, 32, 32, 32, 32});
+    _sm_allocator_thread_cache_create(heap, sm::CACHE_WARM, {64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64});
 
 #ifdef _DEBUG
-    int iterationsCount = 2;
+    int iterationsCount = 512;
 #else
     int iterationsCount = 1024 * 4;
 #endif
@@ -52,11 +52,11 @@ void ThreadFunc(sm_allocator heap)
 
 TEST(MultithreadingTests, StressTest)
 {
-    sm_allocator heap = _sm_allocator_create(10, (48 * 1024 * 1024));
+    sm_allocator heap = _sm_allocator_create(15, (48 * 1024 * 1024));
 
     int threadsCount = std::thread::hardware_concurrency();
 #ifdef _DEBUG
-    threadsCount = 1;
+    threadsCount = std::min(threadsCount, 4);
 #endif
     printf("%d threads created\n", threadsCount);
 
@@ -123,7 +123,7 @@ std::atomic<uint64_t> operationsCount;
 void ThreadFunc2(sm_allocator heap)
 {
     SM_ASSERT(heap != nullptr);
-    _sm_allocator_thread_cache_create(heap, sm::CACHE_WARM, {2048, 2048, 2048, 2048, 2048});
+    _sm_allocator_thread_cache_create(heap, sm::CACHE_WARM, {2048, 2048, 2048, 2048, 2048, 2048, 2048, 2048, 2048, 2048});
 
 #ifdef _DEBUG
     int iterationsCount = 2;
@@ -158,12 +158,12 @@ void ThreadFunc2(sm_allocator heap)
 
 TEST(MultithreadingTests, MtPerformance)
 {
-    sm_allocator heap = _sm_allocator_create(8, (48 * 1024 * 1024));
+    sm_allocator heap = _sm_allocator_create(10, (48 * 1024 * 1024));
 
     operationsCount.store(0);
     int threadsCount = std::thread::hardware_concurrency();
 #ifdef _DEBUG
-    threadsCount = 1;
+    threadsCount = 2;
 #endif
     threadsCount = std::min(8, threadsCount);
     printf("%d threads created\n", threadsCount);
