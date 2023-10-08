@@ -64,7 +64,7 @@
 
 #if !defined(SMM_LINEAR_PARTITIONING) && !defined(SMM_FLOAT_PARTITIONING) && !defined(SMM_PL_PARTITIONING)
 
-#define SMM_LINEAR_PARTITIONING
+//#define SMM_LINEAR_PARTITIONING
 /*
  
   Simple linear partitioning: every bucket size grow by 16 bytes
@@ -78,7 +78,7 @@
     49->800, 50->816, 51->832, 52->848, 53->864, 54->880, 55->896, 56->912, 57->928, 58->944, 59->960, 60->976, 61->992
 */
 
-//#define SMM_PL_PARTITIONING
+#define SMM_PL_PARTITIONING
 /*
   Piecewise linear function partitioning
   Note: as fast as linear partitioning and less wasteful in the case if the number of buckets is big
