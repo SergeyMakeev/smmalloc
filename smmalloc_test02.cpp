@@ -1,5 +1,4 @@
 #include <array>
-#include <cstddef>
 #include <gtest/gtest.h>
 #include <inttypes.h>
 #include <smmalloc.h>

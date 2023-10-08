@@ -3,6 +3,7 @@
 #include <smmalloc.h>
 #include <ubench.h>
 #include <vector>
+#include <cstddef>
 
 #if defined(_WIN32)
 #include <hoard.h>
