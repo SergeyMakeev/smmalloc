@@ -71,8 +71,8 @@ TEST(SimpleTests, BucketSizeTest)
 {
     for (size_t elemSize = 1; elemSize < (1024 * 1024); elemSize++)
     {
-        size_t bucketIndex = sm::getBucketIndexBySize(elemSize);
-        size_t bucketSizeInBytes = sm::getBucketSizeInBytesByIndex(bucketIndex);
+        size_t bucketIndex = sm::GetBucketIndexBySize(elemSize);
+        size_t bucketSizeInBytes = sm::GetBucketSizeInBytesByIndex(bucketIndex);
         ASSERT_TRUE(elemSize <= bucketSizeInBytes);
     }
 }
@@ -82,7 +82,7 @@ TEST(SimpleTests, BucketSizeAlignment)
     // make sure bucket sizes are at least aligned to kMinValidAlignment
     for (size_t bucketIndex = 0; bucketIndex < SMM_MAX_BUCKET_COUNT; bucketIndex++)
     {
-        size_t bucketSizeInBytes = sm::getBucketSizeInBytesByIndex(bucketIndex);
+        size_t bucketSizeInBytes = sm::GetBucketSizeInBytesByIndex(bucketIndex);
         ASSERT_TRUE(_IsAligned(bucketSizeInBytes, sm::Allocator::kMinValidAlignment));
     }
 }
@@ -199,7 +199,7 @@ TEST(SimpleTests, MegaAlloc)
     for (size_t bucketIndex = 0; bucketIndex < bucketsCount; bucketIndex++)
     {
         uint32_t elementsCount = heap->GetBucketElementsCount(bucketIndex);
-        size_t elementsSize = sm::getBucketSizeInBytesByIndex(bucketIndex);
+        size_t elementsSize = sm::GetBucketSizeInBytesByIndex(bucketIndex);
         printf("Bucket[%zu], Elements[%d], SizeOf[%zu] -----\n", bucketIndex, elementsCount, elementsSize);
         const sm::BucketStats* stats = heap->GetBucketStats(bucketIndex);
         if (!stats)

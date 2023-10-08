@@ -54,9 +54,8 @@ void TlsPoolBucket::Init(uint32_t* pCacheStack, uint32_t maxElementsNum, CacheWa
     pBucketData = pBucket->pData;
 
     // warmup cache
-    size_t elementSize = sm::getBucketSizeInBytesByIndex(bucketIndex);
-
-    if (warmupOptions == CACHE_COLD || !IsAligned(elementSize, 16))
+    size_t elementSize = sm::GetBucketSizeInBytesByIndex(bucketIndex);
+    if (warmupOptions == CACHE_COLD)
     {
         return;
     }
@@ -129,6 +128,7 @@ uint32_t* TlsPoolBucket::Destroy()
 
 void Allocator::CreateThreadCache(CacheWarmupOptions warmupOptions, std::initializer_list<uint32_t> options)
 {
+    // thread cache configuration is invalid
     SM_ASSERT(bucketsCount >= options.size());
 
     size_t i = 0;
@@ -141,7 +141,7 @@ void Allocator::CreateThreadCache(CacheWarmupOptions warmupOptions, std::initial
 
         uint32_t elementsNum = _elementsNum + SMM_MAX_CACHE_ITEMS_COUNT;
 
-        // allocate stack for cache
+        // allocate stack for cache indices
         uint32_t* localStack = (uint32_t*)GenericAllocator::Alloc(gAllocator, elementsNum * sizeof(uint32_t), SMM_CACHE_LINE_SIZE);
 
         // initialize
@@ -266,7 +266,7 @@ void Allocator::Init(uint32_t _bucketsCount, size_t _bucketSizeInBytes)
         PoolBucket& bucket = buckets[i];
         bucket.pData = pBuffer.get() + i * bucketSizeInBytes;
         bucket.pBufferEnd = bucket.pData + bucketSizeInBytes;
-        size_t bucketSizeInBytes = getBucketSizeInBytesByIndex(i);
+        size_t bucketSizeInBytes = GetBucketSizeInBytesByIndex(i);
         SM_ASSERT(IsAligned(bucketSizeInBytes, kMinValidAlignment));
         SM_ASSERT(IsAligned(size_t(bucket.pData), alignmentMax) && "Incorrect alignment detected!");
         bucket.Create(bucketSizeInBytes);

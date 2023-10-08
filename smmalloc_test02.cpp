@@ -86,7 +86,7 @@ TEST(MultithreadingTests, StressTest)
 
     for (int32_t bucketIndex = 0; bucketIndex < (int32_t)bucketsCount; bucketIndex++)
     {
-        size_t elementSize = sm::getBucketSizeInBytesByIndex(bucketIndex);
+        size_t elementSize = sm::GetBucketSizeInBytesByIndex(bucketIndex);
 
         size_t maxCount = heap->GetBucketElementsCount(bucketIndex);
 
@@ -203,7 +203,7 @@ TEST(MultithreadingTests, MtPerformance)
     for (size_t bucketIndex = 0; bucketIndex < bucketsCount; bucketIndex++)
     {
         uint32_t elementsCount = heap->GetBucketElementsCount(bucketIndex);
-        size_t elementsSize = sm::getBucketSizeInBytesByIndex(bucketIndex);
+        size_t elementsSize = sm::GetBucketSizeInBytesByIndex(bucketIndex);
         printf("Bucket[%zu], Elements[%d], SizeOf[%zu] -----\n", bucketIndex, elementsCount, elementsSize);
         const sm::BucketStats* stats = heap->GetBucketStats(bucketIndex);
         if (!stats)

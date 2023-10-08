@@ -79,7 +79,7 @@ void printDebug(sm_allocator heap)
     for (size_t bucketIndex = 0; bucketIndex < bucketsCount; bucketIndex++)
     {
         uint32_t elementsCount = heap->GetBucketElementsCount(bucketIndex);
-        size_t elementsSize = sm::getBucketSizeInBytesByIndex(bucketIndex);
+        size_t elementsSize = sm::GetBucketSizeInBytesByIndex(bucketIndex);
         printf("Bucket[%zu], Elements[%d], SizeOf[%zu] -----\n", bucketIndex, elementsCount, elementsSize);
         const sm::BucketStats* stats = heap->GetBucketStats(bucketIndex);
         if (!stats)

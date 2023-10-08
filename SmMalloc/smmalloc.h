@@ -66,7 +66,7 @@
 
 //#define SMM_LINEAR_PARTITIONING
 /*
- 
+
   Simple linear partitioning: every bucket size grow by 16 bytes
   Note: fastest but can be wastefull because bucket size distribution is not ideal (works pretty well for a small number of buckets)
 
@@ -104,7 +104,8 @@
     13->160, 14->192, 15->224, 16->256, 17->320, 18->384, 19->448, 20->512, 21->640, 22->768, 23->896, 24->1024,
     25->1280, 26->1536, 27->1792, 28->2048, 29->2560, 30->3072, 31->3584, 32->4096, 33->5120, 34->6144, 35->7168, 36->8192,
     37->10240, 38->12288, 39->14336, 40->16384, 41->20480, 42->24576, 43->28672, 44->32768, 45->40960, 46->49152, 47->57344, 48->65536,
-    49->81920, 50->98304, 51->114688, 52->131072, 53->163840, 54->196608, 55->229376, 56->262144, 57->327680, 58->393216, 59->458752, 60->524288, 61->655360
+    49->81920, 50->98304, 51->114688, 52->131072, 53->163840, 54->196608, 55->229376, 56->262144, 57->327680, 58->393216, 59->458752,
+  60->524288, 61->655360
 */
 #endif
 
@@ -152,7 +153,7 @@ struct GlobalStats
     std::atomic<size_t> totalAllocationsRoutedToDefaultAllocator;
     std::atomic<size_t> routingReasonBySize;
     std::atomic<size_t> routingReasonSaturation;
-    
+
     GlobalStats()
     {
         totalNumAllocationAttempts.store(0);
@@ -169,7 +170,7 @@ struct BucketStats
     std::atomic<size_t> hitCount;
     std::atomic<size_t> missCount;
     std::atomic<size_t> freeCount;
-    
+
     BucketStats()
     {
         cacheHitCount.store(0);
@@ -275,7 +276,7 @@ SMM_INLINE size_t Align(size_t val, size_t alignment)
     return r;
 }
 
-SMM_INLINE size_t getBucketIndexBySize(size_t bytesCount)
+SMM_INLINE size_t GetBucketIndexBySize(size_t bytesCount)
 {
 #if defined(SMM_LINEAR_PARTITIONING)
     size_t bucketIndex = ((bytesCount - 1) >> 4);
@@ -295,11 +296,11 @@ SMM_INLINE size_t getBucketIndexBySize(size_t bytesCount)
     size_t bucketIndex = (size <= 127) ? p0 : ((size > 1023) ? p2 : p1);
     return bucketIndex;
 #else
-    #error Unknown partitioning scheme!
+#error Unknown partitioning scheme!
 #endif
 }
 
-SMM_INLINE size_t getBucketSizeInBytesByIndex(size_t bucketIndex)
+SMM_INLINE size_t GetBucketSizeInBytesByIndex(size_t bucketIndex)
 {
 #if defined(SMM_LINEAR_PARTITIONING)
     size_t sizeInBytes = 16 + bucketIndex * 16;
@@ -319,6 +320,8 @@ SMM_INLINE size_t getBucketSizeInBytesByIndex(size_t bucketIndex)
 #error Unknown partitioning scheme!
 #endif
 }
+
+SMM_INLINE size_t Min(size_t a, size_t b) { return (a < b) ? a : b; }
 
 struct GenericAllocator
 {
@@ -388,7 +391,7 @@ class Allocator
 #ifdef SMMALLOC_STATS_SUPPORT
         BucketStats bucketStats;
 #endif
-        
+
         PoolBucket()
             : head(TaggedIndex::Invalid)
             , pData(nullptr)
@@ -570,12 +573,12 @@ class Allocator
 #endif
 
         size_t bytesCount = Align(_bytesCount, alignment);
-        size_t bucketIndex = getBucketIndexBySize(bytesCount);
+        size_t bucketIndex = GetBucketIndexBySize(bytesCount);
 
 #ifdef SMMALLOC_STATS_SUPPORT
         bool isValidBucket = false;
 #endif
-        
+
         if (bucketIndex < bucketsCount)
         {
 #ifdef SMMALLOC_STATS_SUPPORT
@@ -596,7 +599,9 @@ class Allocator
             }
         }
 
-        while (bucketIndex < bucketsCount)
+        // never "overflow" allocation to more than 4 buckets (for performance reasons)
+        const size_t maxBucketIndex = Min(bucketsCount, bucketIndex + 4);
+        while (bucketIndex < maxBucketIndex)
         {
             void* pRes = buckets[bucketIndex].Alloc();
             if (pRes)
@@ -624,7 +629,7 @@ class Allocator
             do
             {
                 bucketIndex++;
-            } while (!IsAligned(getBucketSizeInBytesByIndex(bucketIndex), alignment));
+            } while (!IsAligned(GetBucketSizeInBytesByIndex(bucketIndex), alignment));
         }
 
 #ifdef SMMALLOC_STATS_SUPPORT
@@ -698,7 +703,7 @@ class Allocator
         size_t bucketIndex = FindBucket(p);
         if (bucketIndex < bucketsCount)
         {
-            size_t elementSize = getBucketSizeInBytesByIndex(bucketIndex);
+            size_t elementSize = GetBucketSizeInBytesByIndex(bucketIndex);
             if (bytesCount <= elementSize)
             {
                 // reuse existing memory
@@ -734,7 +739,7 @@ class Allocator
 
         // check if we need to realloc from generic allocator to smmalloc
         size_t __bytesCount = Align(bytesCount, alignment);
-        size_t __bucketIndex = getBucketIndexBySize(__bytesCount);
+        size_t __bucketIndex = GetBucketIndexBySize(__bytesCount);
         if (__bucketIndex < bucketsCount)
         {
             void* p2 = Alloc(bytesCount, alignment);
@@ -765,7 +770,7 @@ class Allocator
         size_t bucketIndex = FindBucket(p);
         if (bucketIndex < bucketsCount)
         {
-            size_t elementSize = getBucketSizeInBytesByIndex(bucketIndex);
+            size_t elementSize = GetBucketSizeInBytesByIndex(bucketIndex);
             return elementSize;
         }
 
@@ -799,7 +804,7 @@ class Allocator
             return 0;
         }
 
-        size_t oneElementSize = getBucketSizeInBytesByIndex(bucketIndex);
+        size_t oneElementSize = GetBucketSizeInBytesByIndex(bucketIndex);
         return (uint32_t)(bucketSizeInBytes / oneElementSize);
     }
 
@@ -1031,7 +1036,7 @@ extern "C"
     }
 
     SMMALLOC_API SMM_INLINE void _sm_allocator_thread_cache_create(sm_allocator allocator, sm::CacheWarmupOptions warmupOptions,
-                                                               std::initializer_list<uint32_t> options)
+                                                                   std::initializer_list<uint32_t> options)
     {
         if (allocator == nullptr)
         {

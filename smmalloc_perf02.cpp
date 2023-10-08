@@ -1,14 +1,13 @@
-#include <ubench.h>
-#include <vector>
-#include <smmalloc.h>
 #include <dlmalloc.h>
 #include <rpmalloc.h>
+#include <smmalloc.h>
+#include <ubench.h>
+#include <vector>
 
 #if defined(_WIN32)
-#include <mimalloc.h>
 #include <hoard.h>
+#include <mimalloc.h>
 #endif
-
 
 struct UBenchGlobals
 {
@@ -20,14 +19,14 @@ struct UBenchGlobals
 
     UBenchGlobals()
     {
-        srand(2345);
+        srand(1306);
 
         // num allocations
         randomSequence.resize(kNumAllocations);
         for (size_t i = 0; i < randomSequence.size(); i++)
         {
-            // 16 - 80 bytes
-            size_t sz = 16 + (rand() % 64);
+            // 16 - 256 bytes
+            size_t sz = 16 + (rand() % 240);
             randomSequence[i] = sz;
         }
 
@@ -49,7 +48,10 @@ UBENCH_EX(PerfTest, smmalloc_10m)
     UBenchGlobals& g = UBenchGlobals::get();
     size_t wsSize = g.workingSet.size();
 
-    sm_allocator space = _sm_allocator_create(20, (48 * 1024 * 1024));
+    //
+    sm_allocator space = _sm_allocator_create(18, (48 * 1024 * 1024));
+    _sm_allocator_thread_cache_create(space, sm::CACHE_COLD,
+                                      {512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512});
 
     UBENCH_DO_BENCHMARK()
     {
@@ -94,7 +96,7 @@ UBENCH_EX(PerfTest, smmalloc_10m)
     for (size_t bucketIndex = 0; bucketIndex < bucketsCount; bucketIndex++)
     {
         uint32_t elementsCount = space->GetBucketElementsCount(bucketIndex);
-        size_t elementsSize = sm::getBucketSizeInBytesByIndex(bucketIndex);
+        size_t elementsSize = sm::GetBucketSizeInBytesByIndex(bucketIndex);
         printf("Bucket[%zu], Elements[%d], SizeOf[%zu] -----\n", bucketIndex, elementsCount, elementsSize);
         const sm::BucketStats* stats = space->GetBucketStats(bucketIndex);
         if (!stats)
@@ -109,6 +111,7 @@ UBENCH_EX(PerfTest, smmalloc_10m)
     }
 #endif
 
+    _sm_allocator_thread_cache_destroy(space);
     _sm_allocator_destroy(space);
 }
 
@@ -251,8 +254,6 @@ UBENCH_EX(PerfTest, mi_malloc_10m)
             g.workingSet[i] = nullptr;
         }
     }
-
 }
 
 #endif
-
