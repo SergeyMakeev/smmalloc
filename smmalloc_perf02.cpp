@@ -1,9 +1,9 @@
+#include <cstddef>
 #include <dlmalloc.h>
 #include <rpmalloc.h>
 #include <smmalloc.h>
 #include <ubench.h>
 #include <vector>
-#include <cstddef>
 
 #if defined(_WIN32)
 #include <hoard.h>
