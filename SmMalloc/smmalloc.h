@@ -609,6 +609,7 @@ class Allocator
         const size_t maxBucketIndex = Min(bucketsCount, bucketIndex + 4);
         while (bucketIndex < maxBucketIndex)
         {
+            SM_ASSERT(bucketIndex < buckets.size());
             void* pRes = buckets[bucketIndex].Alloc();
             if (pRes)
             {

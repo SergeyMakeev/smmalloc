@@ -21,7 +21,7 @@ jobs:
     - name: CMake Configure
       run: mkdir build && cd build && cmake ..
     - name: Build
-      run: cd build && cmake --build . --config Release
+      run: cd build && cmake --build . --config RelWithDebInfo
     - name: Run unit tests
       run: cd build && ./smmalloc_test
     - name: Run performance tests
@@ -39,8 +39,8 @@ jobs:
     - name: CMake Configure
       run: mkdir build && cd build && cmake ..
     - name: Build
-      run: cd build && cmake --build . --config Release
+      run: cd build && cmake --build . --config RelWithDebInfo
     - name: Run unit tests
-      run: "build/Release/smmalloc_test.exe"
+      run: "build/RelWithDebInfo/smmalloc_test.exe"
     - name: Run performance tests
-      run: "build/Release/smmalloc_perf.exe"
+      run: "build/RelWithDebInfo/smmalloc_perf.exe"

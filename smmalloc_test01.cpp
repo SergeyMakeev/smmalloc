@@ -91,6 +91,12 @@ TEST(SimpleTests, AlignmentTest03)
             {
                 void* p = _sm_malloc(heap, blockSize, alignment);
                 ASSERT_TRUE(IsAligned(p, alignment));
+
+                if (_sm_mbucket(heap, p) == -1)
+                {
+                    // we've saturated smmalloc all other allocations will be served with default alloc
+                    break;
+                }
             }
 
             _sm_allocator_thread_cache_destroy(heap);
