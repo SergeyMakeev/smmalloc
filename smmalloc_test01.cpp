@@ -17,9 +17,6 @@ bool _IsAligned(size_t v, size_t alignment)
     return (lowBits == 0);
 }
 
-
-
-
 TEST(SimpleTests, AlignmentTest01)
 {
     sm_allocator heap = _sm_allocator_create(5, (48 * 1024 * 1024));
@@ -58,13 +55,48 @@ TEST(SimpleTests, AlignmentTest02)
 
     uint32_t elementsCount = heap->GetBucketElementsCount(bucketIndex);
 
-    for (uint32_t iter = 0; iter < (elementsCount*4); iter++)
+    for (uint32_t iter = 0; iter < (elementsCount * 4); iter++)
     {
         void* _p128 = _sm_malloc(heap, 20, 128);
         ASSERT_TRUE(IsAligned(_p128, 128));
     }
 
     _sm_allocator_destroy(heap);
+}
+
+TEST(SimpleTests, AlignmentTest03)
+{
+    std::array<size_t, 8> alignments = {1, 2, 4, 8, 16, 32, 64, 128};
+
+    const size_t kNumBuckets = 10;
+    size_t maxBlockSize = sm::GetBucketSizeInBytesByIndex(kNumBuckets);
+    for (const size_t alignment : alignments)
+    {
+        printf("Alignment: %zu\n", alignment);
+        for (size_t blockSize = 1; blockSize < maxBlockSize; blockSize++)
+        {
+            // 128kb per bucket
+            sm_allocator heap = _sm_allocator_create(kNumBuckets, (128 * 1024));
+
+            _sm_allocator_thread_cache_create(heap, sm::CACHE_HOT, {32, 32, 32, 32, 32, 32, 32, 32, 32, 32});
+
+            size_t numAllocations = 0;
+            for (size_t bucketIndex = 0; bucketIndex < kNumBuckets; bucketIndex++)
+            {
+                uint32_t elementsCountInBucket = heap->GetBucketElementsCount(bucketIndex);
+                numAllocations += elementsCountInBucket;
+            }
+
+            for (size_t i = 0; i < numAllocations; i++)
+            {
+                void* p = _sm_malloc(heap, blockSize, alignment);
+                ASSERT_TRUE(IsAligned(p, alignment));
+            }
+
+            _sm_allocator_thread_cache_destroy(heap);
+            _sm_allocator_destroy(heap);
+        }
+    }
 }
 
 TEST(SimpleTests, BucketSizeTest)
@@ -87,7 +119,6 @@ TEST(SimpleTests, BucketSizeAlignment)
     }
 }
 
-
 TEST(SimpleTests, Basic)
 {
     sm_allocator heap = _sm_allocator_create(5, (48 * 1024 * 1024));
@@ -101,9 +132,9 @@ TEST(SimpleTests, Basic)
     EXPECT_NE(b, c);
     EXPECT_NE(c, d);
 
-    //ptrdiff_t d1 = (uintptr_t)b - (uintptr_t)a;
-    //ptrdiff_t d2 = (uintptr_t)c - (uintptr_t)b;
-    //ptrdiff_t d3 = (uintptr_t)d - (uintptr_t)c;
+    // ptrdiff_t d1 = (uintptr_t)b - (uintptr_t)a;
+    // ptrdiff_t d2 = (uintptr_t)c - (uintptr_t)b;
+    // ptrdiff_t d3 = (uintptr_t)d - (uintptr_t)c;
 
     _sm_free(heap, d);
     _sm_free(heap, c);
@@ -119,9 +150,9 @@ TEST(SimpleTests, Basic)
     EXPECT_NE(b, c);
     EXPECT_NE(c, d);
 
-    //d1 = (uintptr_t)b - (uintptr_t)a;
-    //d2 = (uintptr_t)c - (uintptr_t)b;
-    //d3 = (uintptr_t)d - (uintptr_t)c;
+    // d1 = (uintptr_t)b - (uintptr_t)a;
+    // d2 = (uintptr_t)c - (uintptr_t)b;
+    // d3 = (uintptr_t)d - (uintptr_t)c;
 
     _sm_free(heap, d);
     _sm_free(heap, c);
@@ -218,7 +249,6 @@ TEST(SimpleTests, MegaAlloc)
     _sm_allocator_destroy(heap);
 }
 
-
 TEST(SimpleTests, ReAlloc)
 {
     sm_allocator heap = _sm_allocator_create(5, (48 * 1024 * 1024));
@@ -250,7 +280,6 @@ TEST(SimpleTests, ReAlloc)
     EXPECT_EQ(p, nullptr);
     EXPECT_EQ(s, 0);
 
-
     void* p2 = _sm_realloc(heap, nullptr, 15, 16);
     size_t s2 = _sm_msize(heap, p2);
     EXPECT_NE(p2, nullptr);
@@ -267,11 +296,11 @@ TEST(SimpleTests, ReAlloc)
     s2 = _sm_msize(heap, p2);
     EXPECT_EQ(s2, 0);
 
-    void* p3 = _sm_realloc(heap, nullptr, 1024*1024, 1);
+    void* p3 = _sm_realloc(heap, nullptr, 1024 * 1024, 1);
     size_t s3 = _sm_msize(heap, p3);
     EXPECT_NE(p3, nullptr);
     EXPECT_TRUE(IsAligned(p3, sm::Allocator::kMinValidAlignment));
-    EXPECT_GE(s3, 1024*1024);
+    EXPECT_GE(s3, 1024 * 1024);
     p3 = _sm_realloc(heap, p3, 4, 8);
     s3 = _sm_msize(heap, p3);
     EXPECT_NE(p3, nullptr);

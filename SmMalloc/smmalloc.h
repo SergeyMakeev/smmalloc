@@ -363,7 +363,10 @@ class Allocator
 
     SMM_INLINE bool IsReadable(void* p) const { return (uintptr_t(p) > kMaxValidAlignment); }
 
-    struct PoolBucket
+#pragma warning(push)
+// warning C4324: structure was padded due to alignment specifier
+#pragma warning(disable : 4324)
+    struct alignas(SMM_CACHE_LINE_SIZE) PoolBucket
     {
         union TaggedIndex
         {
@@ -384,9 +387,6 @@ class Allocator
         uint8_t* pBufferEnd;
         // 4 bytes
         std::atomic<uint32_t> globalTag;
-
-        // 64 bytes
-        char padding[SMM_CACHE_LINE_SIZE];
 
 #ifdef SMMALLOC_STATS_SUPPORT
         BucketStats bucketStats;
@@ -500,6 +500,8 @@ class Allocator
 
         SMM_INLINE bool IsMyAlloc(void* p) const { return (p >= pData && p < pBufferEnd); }
     };
+    static_assert(alignof(PoolBucket) == 64, "PoolBucket exepected be aligned with the cache line size to prevent false cache sharing");
+#pragma warning(pop)
 
   public:
     void CreateThreadCache(CacheWarmupOptions warmupOptions, std::initializer_list<uint32_t> options);
