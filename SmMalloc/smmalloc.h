@@ -720,6 +720,14 @@ class Allocator
             // alloc new memory block and move memory
             void* p2 = Alloc(bytesCount, alignment);
 
+            if (p2 == nullptr)
+            {
+                // realloc
+                //   On failure, returns a null pointer.
+                //   The original pointer ptr remains valid and may need to be deallocated with free or realloc.
+                return nullptr;
+            }
+
             // Assume that p is the pointer that is allocated by passing the zero size. No preserve memory conents is requried.
             if (IsReadable(p))
             {
